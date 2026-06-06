@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a new feature, primitive, or improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposing a new component? Tell us the props a human **and** an agent
+        would author against — see the Human+ component contract in
+        CONTRIBUTING.md. Generic primitives beat one-app widgets.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: The use case or pain point. What can't you do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: The API / props surface you have in mind — JSON-friendly inputs, controlled `value`/`onChange`, stable handles.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

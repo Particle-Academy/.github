@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a bug in a Fancy UI package
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Each package is its own repo — please file this
+        in the repository for the package that's misbehaving.
+  - type: input
+    id: package
+    attributes:
+      label: Package & version
+      description: Which package, and what version? (e.g. `@particle-academy/react-fancy` 4.4.1)
+      placeholder: "@particle-academy/<package> x.y.z"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Ideally a minimal code snippet or sandbox link.
+      placeholder: |
+        1. Render `<Component … />`
+        2. …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Framework + versions (React / Laravel / PHP / Node), browser, OS — whatever's relevant.
+    validations:
+      required: false
