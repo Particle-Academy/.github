@@ -1,14 +1,16 @@
 # Particle Academy
 
-**A Civicognita initiative.** Particle Academy is a non-profit **Community Support
-Service** building **stronger communities** through holistic education — **career
-building**, **wellness training**, and **entrepreneurship evangelism**, with
-entrepreneurship as the vehicle for personal & professional transformation.
-**Digital today, and gearing up for a physical entrepreneurship center.**
+**A Civicognita initiative.** Particle Academy exists to **empower people to be the
+best human they can be** — learning to make the most of **every tool available**,
+starting with their own **mind and body**, and the **work they produce**.
+
+A non-profit **Community Support Service**, we pursue this through **career
+building**, **wellness training**, and **entrepreneurship evangelism**. **Digital
+today, and gearing up for a physical entrepreneurship center.**
 → [particle.academy](https://particle.academy)
 
-This GitHub org is also **where our open-source engineering lives** — the tools we
-build to teach with and to give the community a Human+ foundation.
+This GitHub org is where our **open-source engineering** lives — the tools we build
+and teach with.
 
 ## 🧩 Fancy UI
 
@@ -43,7 +45,7 @@ structured output). After upstream
 composer require particle-academy/prism
 ```
 
-Docs: [prismphp.com](https://prismphp.com).
+Docs: [ai.particle.academy](https://ai.particle.academy).
 
 ## 🤝 Contributing
 
