@@ -18,8 +18,11 @@ A constellation of small, independent UI packages for **Human+ UX**: application
 where humans and agents share the same UI surface and trade control fluidly through
 MCP tool bridges, never DOM scraping.
 
-- ~50 React primitives in `react-fancy`, plus specialized editors — sheets, slides,
-  flow, code, whiteboard, diff, 3D, and more
+- **64 packages, 245 installable components** — 47 TypeScript, 16 PHP, 1 polyglot.
+  ~70 React primitives in `react-fancy`, plus specialized editors (sheets, slides,
+  flow, code, whiteboard, diff, terminal, map, 3D) and headless server capabilities
+- **Most server capabilities ship as a matched PHP + Node pair**, so the same
+  feature works behind the same UI whichever backend you run
 - Every interactive surface ships an **MCP bridge**, so agents are first-class
   participants rather than external scripts
 - Laravel / PHP packages for catalog, feature management, gamification, and agentic
