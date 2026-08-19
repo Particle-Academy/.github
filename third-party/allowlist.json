@@ -1,0 +1,493 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-08-19",
+  "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
+  "policy": {
+    "scope": "direct-only",
+    "freshnessDays": 92,
+    "freshnessEnforcedFrom": "2026-09-19",
+    "onLookupFailure": "fail",
+    "note": "Direct dependencies only. Transitive dependencies inherit approval from their allowlisted direct parent and are deliberately not filed. See README.md for what that does and does not protect against."
+  },
+  "firstParty": {
+    "npm": [
+      "@particle-academy"
+    ],
+    "composer": [
+      "particle-academy"
+    ],
+    "pypi": [
+      "fancy-flow",
+      "fancy-catalog",
+      "fancy-features",
+      "fancy-conformance",
+      "holy-sheet",
+      "dark-slide",
+      "last-word"
+    ]
+  },
+  "ecosystems": {
+    "npm": {
+      "identity": "scope",
+      "identityNote": "An npm package's only manifest-visible owner is its scope. Registry `maintainers` is mutable metadata that a consumer never declares, so it is not a checkable identity. Unscoped packages therefore cannot be approved by author and must be listed one at a time.",
+      "authors": {
+        "@types": {
+          "reason": "DefinitelyTyped. Type declarations only -- no runtime code reaches a consumer's bundle, and every stub comes from one repository under one review process.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/DefinitelyTyped/DefinitelyTyped -- pushed 2026-08-18",
+            "verifiedOn": "2026-08-19",
+            "expires": "2026-11-19",
+            "why": "A single stub's publish date is not a maintenance signal for DefinitelyTyped; the repository is the project. @types/marked-terminal last published 2025-08-03 and that says something about marked-terminal, not about DT."
+          }
+        },
+        "@tanstack": {
+          "reason": "TanStack. One organisation, one release process; react-query, react-table and react-virtual are all load-bearing in fancy-query and fancy-grid."
+        },
+        "@testing-library": {
+          "reason": "Testing Library. Test-only, never shipped, and the suite's TDD rule depends on it."
+        },
+        "@tailwindcss": {
+          "reason": "Tailwind CSS v4 ships its integrations as @tailwindcss/* packages. react-fancy is built on Tailwind v4; the framework and its integrations are one project."
+        }
+      },
+      "packages": {
+        "react": {
+          "reason": "The UI framework the whole suite is built on. React 19 only since kit 0.5."
+        },
+        "react-dom": {
+          "reason": "React's DOM renderer. Inseparable from react."
+        },
+        "typescript": {
+          "reason": "The language every TS package is written in."
+        },
+        "typescript-eslint": {
+          "reason": "TypeScript support for ESLint; the rules-of-hooks lint runs on it."
+        },
+        "eslint": {
+          "reason": "The suite's linter, wired into all React repos after the rules-of-hooks sweep found two live crashes."
+        },
+        "eslint-plugin-react-hooks": {
+          "reason": "The rules-of-hooks lint itself."
+        },
+        "vitest": {
+          "reason": "The TypeScript test runner named in the TDD rule."
+        },
+        "jsdom": {
+          "reason": "DOM environment for vitest component tests."
+        },
+        "tsup": {
+          "reason": "The build tool for most TypeScript packages in the suite.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/egoist/tsup -- pushed 2026-07-20",
+            "verifiedOn": "2026-08-19",
+            "expires": "2026-11-19",
+            "why": "Last npm publish was 2025-11-12, but the repository is committed to. Development attention has shifted toward tsdown (which fancy-tui already builds with); if the next re-verification finds no commits, the answer is migrating rather than renewing."
+          },
+          "review": "Last RELEASE was 2025-11-12 (280 days). Alive on commits only. Decide whether the suite migrates to tsdown before this override expires 2026-11-19."
+        },
+        "tsdown": {
+          "reason": "Rolldown-based bundler; fancy-tui's build tool and the likely successor to tsup across the suite."
+        },
+        "tsx": {
+          "reason": "TypeScript execution for build and generator scripts."
+        },
+        "vite": {
+          "reason": "The dev server and bundler for every app and for fancy-pwa's peer surface."
+        },
+        "laravel-vite-plugin": {
+          "reason": "Vite integration for Laravel apps; part of the Laravel toolchain."
+        },
+        "@vitejs/plugin-react": {
+          "reason": "React support for Vite. Maintained by the Vite team."
+        },
+        "concurrently": {
+          "reason": "Runs the dev processes side by side in app scaffolds."
+        },
+        "tailwindcss": {
+          "reason": "The styling system react-fancy is built on; a peer dependency of every UI package."
+        },
+        "clsx": {
+          "reason": "Conditional className joining. Runtime dependency of react-fancy, fancy-whiteboard and fancy-flow.",
+          "review": "FAILS THE FRESHNESS BAR. Last release 2025-06-27, last commit 2024-06-10 (lukeed/clsx). Feature-complete and 234 bytes -- the honest options are to vendor the ~20 lines into fancy-file-commons or react-fancy and drop the dependency, or record an owner decision to accept an unmaintained one. It is a runtime dependency shipped to every consumer, so this is the highest-value item on this list."
+        },
+        "tailwind-merge": {
+          "reason": "Resolves conflicting Tailwind classes; runtime dependency of react-fancy's class merging."
+        },
+        "lucide-react": {
+          "reason": "The icon set behind react-fancy's <Icon>."
+        },
+        "marked": {
+          "reason": "Markdown parsing in react-fancy and fancy-tui."
+        },
+        "zod": {
+          "reason": "Schema validation for fancy-flow node configuration and typed llm_call output."
+        },
+        "zustand": {
+          "reason": "The store fancy-screens exposes as a peer for cross-screen presence."
+        },
+        "ulid": {
+          "reason": "Sortable identifiers in fancy-catalog-js.",
+          "review": "FAILS THE FRESHNESS BAR. Last release 2025-11-30, last commit 2026-02-27 (ulid/javascript, 173 days). ULID is a frozen spec and the implementation is small; vendoring it or moving to crypto.randomUUID where ordering is not needed both remove the dependency outright."
+        },
+        "axios": {
+          "reason": "The HTTP client Laravel and Inertia scaffolds ship with; peer of classroom and job-board."
+        },
+        "@inertiajs/react": {
+          "reason": "Inertia.js. The integration seam fancy-inertia and fancy-query exist to serve."
+        },
+        "laravel-echo": {
+          "reason": "Laravel broadcasting client; the transport behind fancy-query's live invalidation."
+        },
+        "pusher-js": {
+          "reason": "The websocket client Laravel Echo drives, including against Reverb."
+        }
+      }
+    },
+    "composer": {
+      "identity": "vendor",
+      "identityNote": "Every Packagist name is vendor/package and Packagist enforces vendor ownership at registration, so the vendor prefix is a genuine, checkable owner identity -- the strongest of the three ecosystems.",
+      "authors": {
+        "laravel": {
+          "reason": "The framework the PHP side of the suite is built on. Anything Laravel publishes is in scope by construction."
+        },
+        "illuminate": {
+          "reason": "Laravel's read-only component splits. Same project, same releases, different package names."
+        },
+        "symfony": {
+          "reason": "Laravel is built on Symfony components; symfony/process and symfony/yaml come from the same foundation we already depend on."
+        },
+        "pestphp": {
+          "reason": "Pest. The PHP test runner named in the suite's TDD rule."
+        }
+      },
+      "packages": {
+        "phpunit/phpunit": {
+          "reason": "Pest runs on PHPUnit; several packages target it directly."
+        },
+        "orchestra/testbench": {
+          "reason": "Laravel package testing harness. The only way to feature-test a Laravel package outside an app."
+        },
+        "mockery/mockery": {
+          "reason": "Test doubles for PHP; part of the standard Laravel test stack."
+        },
+        "nunomaduro/collision": {
+          "reason": "CLI error reporting in the Laravel test stack."
+        },
+        "nesbot/carbon": {
+          "reason": "Date handling. Effectively part of Laravel and required directly by laravel-fms."
+        },
+        "guzzlehttp/guzzle": {
+          "reason": "The HTTP client behind the fancy-git provider adapters and Laravel's HTTP facade."
+        },
+        "inertiajs/inertia-laravel": {
+          "reason": "The server half of Inertia; the seam fancy-seo and fancy-inertia are built around."
+        },
+        "spatie/browsershot": {
+          "reason": "Headless-Chrome rendering for the showcase's PDF and image capture."
+        },
+        "barryvdh/laravel-dompdf": {
+          "reason": "PDF generation for laravel-courses certificates."
+        },
+        "fakerphp/faker": {
+          "reason": "Test and seed data across the Laravel packages.",
+          "review": "FAILS THE FRESHNESS BAR. Last release 2026-02-04, last commit 2026-05-02 (FakerPHP/Faker, 109 days). Marginal and widely relied upon -- it arrives transitively with orchestra/testbench anyway, so the cheapest correct fix in most repos is dropping the direct require-dev entry and letting it be inherited."
+        },
+        "http-interop/http-factory-guzzle": {
+          "reason": "PSR-17 factory bridge required by knplabs/github-api and php-gitlab-api.",
+          "review": "FAILS THE FRESHNESS BAR. Last release and last commit both 2025-12-15 (246 days). It is a thin PSR-17 adapter; php-http/guzzle7-adapter or a locally-written factory would remove it. Both fancy-git-github-php and fancy-git-gitlab-php require it directly."
+        }
+      }
+    },
+    "pypi": {
+      "identity": "none",
+      "identityNote": "PyPI has no namespace at all -- a requirement string carries no owner, and project ownership is not derivable from what a consumer declares. Author-level approval is therefore NOT EXPRESSIBLE for Python, and every distribution is listed individually. This is a real difference between registries, not an oversight.",
+      "authors": {},
+      "packages": {
+        "pytest": {
+          "reason": "The Python test runner for the -py mirror packages."
+        },
+        "ruff": {
+          "reason": "Linter and formatter for the Python packages."
+        },
+        "mypy": {
+          "reason": "Static type checking for the Python packages."
+        }
+      }
+    }
+  },
+  "packageGrants": {
+    "_note": "A grant approves a library FOR ONE PACKAGE, because that package exists to wrap or host it. It does not approve the library anywhere else. Keys are the manifest name (package.json name / composer.json name / [project] name), falling back to the repo directory name for manifests that declare none.",
+    "@particle-academy/fancy-echarts": {
+      "npm": {
+        "echarts": {
+          "reason": "The charting library this package exists to wrap. Peer, never bundled."
+        },
+        "echarts-gl": {
+          "reason": "ECharts' GL renderer, for the 3D chart types the wrapper exposes."
+        }
+      }
+    },
+    "@particle-academy/fancy-map": {
+      "npm": {
+        "leaflet": {
+          "reason": "The OSM map engine this package exists to wrap.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/Leaflet/Leaflet -- pushed 2026-08-17",
+            "verifiedOn": "2026-08-19",
+            "expires": "2026-11-19",
+            "why": "Last npm publish 2025-08-16, but the repository is actively committed to. Leaflet's release cadence is slow by design; the commit stream is the live signal."
+          }
+        },
+        "@googlemaps/js-api-loader": {
+          "reason": "The Google Maps engine adapter's loader. Google's own package."
+        }
+      }
+    },
+    "@particle-academy/fancy-term": {
+      "npm": {
+        "@xterm/xterm": {
+          "reason": "The terminal emulator <Terminal> exists to wrap. Peer, never bundled."
+        },
+        "@xterm/addon-fit": {
+          "reason": "xterm.js' own resize addon; required for the controlled sizing contract."
+        }
+      }
+    },
+    "@particle-academy/fancy-3d-three": {
+      "npm": {
+        "three": {
+          "reason": "The engine this adapter exists to wrap. Peer, so the consumer owns the version."
+        }
+      }
+    },
+    "@particle-academy/fancy-3d-babylon": {
+      "npm": {
+        "@babylonjs/core": {
+          "reason": "The engine this adapter exists to wrap. Peer, so the consumer owns the version."
+        }
+      }
+    },
+    "@particle-academy/fancy-passkeys": {
+      "npm": {
+        "@simplewebauthn/server": {
+          "reason": "The WebAuthn server implementation this package wraps. We write no cryptography of our own."
+        }
+      }
+    },
+    "@particle-academy/fancy-passkeys-ui": {
+      "npm": {
+        "@simplewebauthn/browser": {
+          "reason": "The browser ceremony helper the passkey UI drives. We write no cryptography of our own.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/MasterKale/SimpleWebAuthn -- pushed 2026-08-14",
+            "verifiedOn": "2026-08-19",
+            "expires": "2026-11-19",
+            "why": "Last npm publish for the browser package was 2026-03-10; the monorepo it lives in is actively committed to and its server sibling published 2026-06-24."
+          }
+        }
+      }
+    },
+    "particle-academy/fancy-passkeys": {
+      "composer": {
+        "web-auth/webauthn-lib": {
+          "reason": "The WebAuthn implementation the PHP side wraps. We write no cryptography of our own."
+        },
+        "spomky-labs/cbor-php": {
+          "reason": "CBOR encoding, required to build WebAuthn attestation fixtures in the test suite."
+        }
+      }
+    },
+    "@particle-academy/fancy-flow": {
+      "npm": {
+        "@xyflow/react": {
+          "reason": "React Flow. The canvas the optional FlowEditor is built on -- the headless /engine entrypoint never imports it."
+        },
+        "ai": {
+          "reason": "The Vercel AI SDK, behind the opt-in ./llm/vercel-ai adapter only. Core declares registerLlmClient and imports no provider SDK."
+        },
+        "@dagrejs/dagre": {
+          "reason": "Graph auto-layout for the editor's tidy-up action. Editor-only, dev dependency."
+        }
+      }
+    },
+    "@particle-academy/fancy-catalog": {
+      "npm": {
+        "stripe": {
+          "reason": "The Stripe SDK this package exists to wrap. Peer, so the consumer owns the version."
+        }
+      }
+    },
+    "particle-academy/laravel-catalog": {
+      "composer": {
+        "stripe/stripe-php": {
+          "reason": "The Stripe SDK this package exists to wrap. Version ceiling is set by laravel/cashier, not by us."
+        }
+      }
+    },
+    "fancy-catalog": {
+      "pypi": {
+        "stripe": {
+          "reason": "The Stripe SDK the Python catalog mirror wraps. Optional extra."
+        }
+      }
+    },
+    "@particle-academy/fancy-git-github": {
+      "npm": {
+        "octokit": {
+          "reason": "GitHub's own SDK; the library this provider adapter exists to wrap.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/octokit/octokit.js -- pushed 2026-08-14",
+            "verifiedOn": "2026-08-19",
+            "expires": "2026-11-19",
+            "why": "The `octokit` meta-package last published 2025-10-31 while its component packages and repository move constantly. The meta-package's publish date understates the project's activity."
+          }
+        }
+      }
+    },
+    "particle-academy/fancy-git-github": {
+      "composer": {
+        "knplabs/github-api": {
+          "reason": "The GitHub API client this provider adapter wraps."
+        },
+        "http-interop/http-factory-guzzle": {
+          "reason": "PSR-17 factories required by knplabs/github-api. See the package entry -- it fails the freshness bar."
+        }
+      }
+    },
+    "@particle-academy/fancy-git-gitlab": {
+      "npm": {
+        "@gitbeaker/rest": {
+          "reason": "The GitLab API client this provider adapter wraps."
+        }
+      }
+    },
+    "particle-academy/fancy-git-gitlab": {
+      "composer": {
+        "m4tthumphrey/php-gitlab-api": {
+          "reason": "The GitLab API client this provider adapter wraps.",
+          "review": "FAILS THE FRESHNESS BAR. Last release and last commit both 2026-05-06 (GitLabPHP/Client, 105 days). Marginally over. Single-vendor client with a small maintainer team -- re-check before the next release of fancy-git-gitlab-php; if it stays quiet the adapter should talk to the REST API through guzzle directly, which it nearly does already."
+        },
+        "http-interop/http-factory-guzzle": {
+          "reason": "PSR-17 factories required by php-gitlab-api. See the package entry -- it fails the freshness bar."
+        }
+      }
+    },
+    "@particle-academy/fancy-term-host": {
+      "npm": {
+        "node-pty": {
+          "reason": "Microsoft's pseudo-terminal bindings. The OS primitive this backend exists to expose; there is no pure-JS equivalent."
+        }
+      }
+    },
+    "@particle-academy/fancy-tui": {
+      "npm": {
+        "ink": {
+          "reason": "The React renderer for terminals that fancy-tui's components are built for. Peer, so the consumer owns the version."
+        },
+        "chalk": {
+          "reason": "Terminal colour. Runtime dependency of the ANSI rendering path."
+        },
+        "string-width": {
+          "reason": "Correct display width for wide and combining characters; the layout is wrong without it."
+        },
+        "marked-terminal": {
+          "reason": "Renders markdown to ANSI for the TUI's Markdown surface.",
+          "review": "FAILS THE FRESHNESS BAR. Last release 2025-01-28, last commit 2025-09-02 (mikaelbr/marked-terminal, 351 days). It is a marked renderer -- fancy-tui already depends on marked directly and already owns its own ANSI code path, so absorbing the renderer is a real option rather than a rewrite."
+        },
+        "ink-testing-library": {
+          "reason": "Renders Ink components in tests; the fancy-tui suite is written against it.",
+          "review": "FAILS THE FRESHNESS BAR, WORST IN THE TREE. Last release 2024-05-22, last commit 2024-06-28 (vadimdemedes/ink-testing-library, 782 days). Test-only, so nothing ships to consumers, but the suite's own showcase harness already renders real Ink output -- that harness is the replacement."
+        }
+      }
+    },
+    "@particle-academy/fancy-brand-icons": {
+      "npm": {
+        "simple-icons": {
+          "reason": "The brand-mark source this pack is generated from. Build-time only; the published package ships generated paths, not the dependency."
+        }
+      }
+    },
+    "px-ui-sandbox": {
+      "_reason": "The showcase installs the PEER dependency of every wrapper it demonstrates. Those peers are approved for the wrapper that owns them; the host needs its own grant to install them, and listing them here keeps that explicit rather than promoting them to blanket approvals.",
+      "npm": {
+        "echarts": {
+          "reason": "Peer of fancy-echarts, which the showcase demonstrates."
+        },
+        "echarts-gl": {
+          "reason": "Peer of fancy-echarts, which the showcase demonstrates."
+        },
+        "leaflet": {
+          "reason": "Peer of fancy-map, which the showcase demonstrates.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/Leaflet/Leaflet -- pushed 2026-08-17",
+            "verifiedOn": "2026-08-19",
+            "expires": "2026-11-19",
+            "why": "Same finding as the fancy-map grant: alive on commits, slow on releases."
+          }
+        },
+        "@googlemaps/js-api-loader": {
+          "reason": "Peer of fancy-map's Google engine adapter."
+        },
+        "@xterm/xterm": {
+          "reason": "Peer of fancy-term."
+        },
+        "@xterm/addon-fit": {
+          "reason": "Peer of fancy-term."
+        },
+        "three": {
+          "reason": "Peer of fancy-3d-three."
+        },
+        "@babylonjs/core": {
+          "reason": "Peer of fancy-3d-babylon."
+        },
+        "@xyflow/react": {
+          "reason": "Peer of fancy-flow's editor."
+        },
+        "@simplewebauthn/browser": {
+          "reason": "Peer of fancy-passkeys-ui.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/MasterKale/SimpleWebAuthn -- pushed 2026-08-14",
+            "verifiedOn": "2026-08-19",
+            "expires": "2026-11-19",
+            "why": "Same finding as the fancy-passkeys-ui grant."
+          }
+        },
+        "ink": {
+          "reason": "Peer of fancy-tui; the docs site renders real Ink output for the TUI previews."
+        },
+        "ink-testing-library": {
+          "reason": "Drives the Ink render harness that captures the fancy-tui docs previews.",
+          "review": "FAILS THE FRESHNESS BAR (last commit 2024-06-28). Same finding as the fancy-tui grant."
+        },
+        "puppeteer": {
+          "reason": "The browser spatie/browsershot drives for PDF and social-card capture."
+        },
+        "react-router": {
+          "reason": "Routing for the standalone preview surfaces that render outside the Inertia page tree.",
+          "review": "The app routes with Inertia. A second router is either load-bearing for the preview iframes or a leftover -- confirm which, and drop it if it is the latter. Fresh (2026-08-18), so this is a fitness question, not a maintenance one."
+        },
+        "@tsrx/vite-plugin-react": {
+          "reason": "Vite plugin for Ripple TS (.tsrx modules), used by the experimental Ripple demo route.",
+          "review": "WOULD NOT HAVE BEEN APPROVED AS-IS. Version 0.0.x from a pre-1.0 framework (Ripple-TS/ripple), and the sandbox pins ^0.0.21 while upstream is at 0.0.93 -- a caret on 0.0.x pins the exact version, so this has been frozen 72 releases back since the day it was added. Fresh (2026-08-17) and MIT, so the bar it fails is fitness, not maintenance: decide whether an experimental framework belongs in the showcase host at all, and if it does, unpin it."
+        }
+      },
+      "composer": {
+        "stripe/stripe-php": {
+          "reason": "Required directly by the showcase's checkout routes alongside laravel-catalog."
+        }
+      }
+    },
+    "fancy-starter-kit": {
+      "_reason": "A Laravel application scaffold. Its dependencies are the app stack a fresh `laravel new` receives, not library dependencies.",
+      "npm": {},
+      "composer": {}
+    }
+  }
+}

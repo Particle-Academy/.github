@@ -1,0 +1,31 @@
+name: Allowlist gate audit
+
+# The allowlist cannot drift -- every repo FETCHES it, nothing vendors a copy.
+# What can drift is whether a repo still runs the check at all, and a new repo
+# starts life not running it. This sweeps the live org nightly and fails if any
+# repo with a dependency manifest has no workflow that runs the allowlist check.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Audit every repo in the org
+        env:
+          # The default token reads public repos and lifts the anonymous API
+          # rate limit. Private repos in the org need a PAT with `repo`; without
+          # one they are simply absent from the listing, which is why the
+          # envelope sweep (`check.mjs --sweep --require-gate`) exists alongside
+          # this and is the authority for anything not public.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node third-party/gate-audit.mjs

@@ -1,0 +1,44 @@
+name: CI
+
+# This repo holds the suite's third-party allowlist and the checker that
+# enforces it, so its own tests are the thing standing between a bad edit here
+# and a bad gate in ~50 other repos.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # No install step and no lockfile on purpose: the checker is written
+      # against the Node standard library and has no dependencies. A tool that
+      # polices third-party code and carries its own would be a joke at its own
+      # expense, and this is what keeps that true.
+      - name: Assert the checker has no dependencies
+        run: |
+          if [ -f third-party/package.json ]; then
+            echo "::error::third-party/ must not have a package.json. The checker takes no dependencies."
+            exit 1
+          fi
+
+      - name: Test
+        run: node --test "third-party/*.test.mjs"
+
+      # The allowlist is data the checker reads at runtime; a malformed one
+      # would fail every repo in the suite at once, so it is parsed here too.
+      - name: Allowlist self-check
+        run: node third-party/check.mjs --repo . --freshness off
