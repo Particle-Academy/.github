@@ -154,7 +154,12 @@ The allowlist is **fetched at CI time, never vendored**. Every workflow does:
     persist-credentials: false
 
 - name: Third-party dependency allowlist
-  run: node .third-party-allowlist/third-party/check.mjs --repo .
+  run: |
+    node .third-party-allowlist/third-party/check.mjs --repo .
+    # Delete it. A fetched checkout left lying in the workspace is not
+    # inert: vitest globbed the checker's own tests out of it and failed
+    # a package whose code was fine.
+    rm -rf .third-party-allowlist
 ```
 
 There are no per-repo copies, so there is nothing to drift. This repository is
