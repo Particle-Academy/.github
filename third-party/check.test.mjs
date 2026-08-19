@@ -18,6 +18,7 @@ import {
   gateStatus,
   loadAllowlist,
   freshnessOf,
+  remoteRepoName,
   SCHEMA_VERSION,
 } from './check.mjs';
 
@@ -431,4 +432,37 @@ test('the directory fallback does not hand a grant to a different repo', () => {
   allowlist.packageGrants['px-ui-sandbox'] = { composer: { 'stripe/stripe-php': { reason: 'Showcase checkout.' } } };
   const v = classify(allowlist, 'composer', 'stripe/stripe-php', ['laravel/laravel', 'some-other-app']);
   assert.equal(v.allowed, false);
+});
+
+test('the repo identity comes from the git remote, not only the directory', () => {
+  // px-ui-sandbox lives at repos/px-ui-sandbox but its remote is
+  // Particle-Academy/pa-ux-sandbox, so Actions checks it out into a directory
+  // called pa-ux-sandbox. A grant keyed on either name has to hold in both.
+  const dir = tmpRepo({
+    'package.json': { dependencies: { echarts: '^6.1.0' } },
+    '.git/config': '[remote "origin"]\n\turl = git@github.com:Particle-Academy/pa-ux-sandbox.git\n',
+  });
+  assert.equal(remoteRepoName(dir), 'pa-ux-sandbox');
+});
+
+test('a submodule .git pointer file still yields the remote name', () => {
+  const dir = tmpRepo({ 'realgit/config': '[remote "origin"]\n\turl = https://github.com/Particle-Academy/react-fancy.git\n' });
+  fs.writeFileSync(path.join(dir, '.git'), `gitdir: ${path.join(dir, 'realgit')}\n`);
+  assert.equal(remoteRepoName(dir), 'react-fancy');
+});
+
+test('a grant keyed on the remote name applies even when the directory differs', async () => {
+  const allowlist = structuredClone(FIXTURE);
+  allowlist.packageGrants['pa-ux-sandbox'] = { npm: { echarts: { reason: 'Peer of fancy-echarts, which the showcase demonstrates.' } } };
+  const dir = tmpRepo({
+    'package.json': { dependencies: { echarts: '^6.1.0' } },
+    '.git/config': '[remote "origin"]\n\turl = git@github.com:Particle-Academy/pa-ux-sandbox.git\n',
+  });
+  const result = await checkRepo(dir, allowlist, { now: NOW, fetcher: alwaysFresh, ...NO_CACHE });
+  assert.deepEqual(result.findings, []);
+});
+
+test('a repo with no remote is still checked, just with one identity fewer', () => {
+  const dir = tmpRepo({ 'package.json': { name: 'x' } });
+  assert.equal(remoteRepoName(dir), null);
 });

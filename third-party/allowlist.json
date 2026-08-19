@@ -412,8 +412,8 @@
         }
       }
     },
-    "px-ui-sandbox": {
-      "_reason": "The showcase installs the PEER dependency of every wrapper it demonstrates. Those peers are approved for the wrapper that owns them; the host needs its own grant to install them, and listing them here keeps that explicit rather than promoting them to blanket approvals.",
+    "pa-ux-sandbox": {
+      "_reason": "The showcase installs the PEER dependency of every wrapper it demonstrates. Those peers are approved for the wrapper that owns them; the host needs its own grant to install them, and listing them here keeps that explicit rather than promoting them to blanket approvals. Keyed on the REMOTE name (Particle-Academy/pa-ux-sandbox), not the envelope path repos/px-ui-sandbox -- the remote name is the identity that is the same here and in Actions.",
       "npm": {
         "echarts": {
           "reason": "Peer of fancy-echarts, which the showcase demonstrates."

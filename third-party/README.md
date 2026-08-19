@@ -68,11 +68,19 @@ A direct dependency passes if any one of these matches.
    narrow — `echarts` being approved for `fancy-echarts` does **not** approve it
    for `fancy-trading`, and the checker says so by name when you try.
 
-   Grants are keyed by the manifest name (`package.json` `name`, `composer.json`
-   `name`, `[project] name`) **or** the repo directory name. Both, because
-   neither is reliable alone: `px-ui-sandbox`'s `composer.json` is named
-   `laravel/laravel` — a name every Laravel app shares — and its `package.json`
-   has no name at all.
+   Grants are keyed by any of three identities, because none is reliable alone:
+   the **manifest name** (`package.json` `name`, `composer.json` `name`,
+   `[project] name`), the **repo directory name**, or the **repo name on the
+   git remote**.
+
+   The showcase needs all three to make the point. Its `composer.json` is named
+   `laravel/laravel` — a name every Laravel app on earth shares, so keying on it
+   would hand the showcase's grants to anything scaffolded with `laravel new`.
+   Its `package.json` has no name at all. And it sits at `repos/px-ui-sandbox`
+   in the envelope while its remote is `Particle-Academy/pa-ux-sandbox`, so the
+   directory name differs between a local run and Actions. **Prefer the remote
+   name when writing a grant for an application** — it is the one identity that
+   is the same in both places.
 
 First-party packages (`@particle-academy/*`, `particle-academy/*`, and the named
 Python distributions) are ours and are not a dependency question.

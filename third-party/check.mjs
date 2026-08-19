@@ -169,6 +169,33 @@ export function parsePyproject(text) {
   return { ecosystem: 'pypi', manifest: 'pyproject.toml', name: projectName, deps };
 }
 
+// The repo's name ON THE REMOTE. This is the identity that stays the same in
+// the envelope and in CI; a directory name does not. px-ui-sandbox is checked
+// out at `repos/px-ui-sandbox` here and at `pa-ux-sandbox` in Actions, because
+// the git remote is `Particle-Academy/pa-ux-sandbox` -- so a grant keyed on the
+// directory passed locally and failed in CI, which is the worst way round.
+export function remoteRepoName(repoDir) {
+  try {
+    let gitDir = path.join(repoDir, '.git');
+    const stat = fs.statSync(gitDir);
+    if (stat.isFile()) {
+      // Submodules and worktrees keep a `gitdir:` pointer instead of a directory.
+      const pointer = fs.readFileSync(gitDir, 'utf8').match(/^gitdir:\s*(.+)$/m);
+      if (!pointer) return null;
+      gitDir = path.resolve(repoDir, pointer[1].trim());
+    }
+    const config = fs.readFileSync(path.join(gitDir, 'config'), 'utf8');
+    const url = config.match(/\[remote "origin"\][^[]*?url\s*=\s*(\S+)/s);
+    if (!url) return null;
+    const name = url[1].replace(/\.git$/, '').split(/[/:]/).pop();
+    return name || null;
+  } catch {
+    // No remote is not an error -- an unpublished repo still gets checked, it
+    // just has one fewer identity a grant can be keyed on.
+    return null;
+  }
+}
+
 export function readManifests(repoDir) {
   const out = [];
   const pkg = readJsonIfPresent(path.join(repoDir, 'package.json'));
@@ -451,9 +478,14 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
   const findings = [];
   const checked = [];
 
-  const repoIdentity = path.basename(path.resolve(repoDir));
+  const repoIdentities = [
+    path.basename(path.resolve(repoDir)),
+    remoteRepoName(repoDir),
+    // GITHUB_REPOSITORY is `owner/repo`; only meaningful for a single --repo run.
+    process.env.GITHUB_REPOSITORY?.split('/').pop() || null,
+  ];
   for (const manifest of manifests) {
-    const identities = [...new Set([manifest.name, repoIdentity].filter(Boolean))];
+    const identities = [...new Set([manifest.name, ...repoIdentities].filter(Boolean))];
     for (const dep of manifest.deps) {
       const verdict = classify(allowlist, manifest.ecosystem, dep.name, identities);
       const record = {
