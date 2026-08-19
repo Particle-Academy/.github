@@ -158,8 +158,10 @@ The allowlist is **fetched at CI time, never vendored**. Every workflow does:
     node .third-party-allowlist/third-party/check.mjs --repo .
     # Delete it. A fetched checkout left lying in the workspace is not
     # inert: vitest globbed the checker's own tests out of it and failed
-    # a package whose code was fine.
-    rm -rf .third-party-allowlist
+    # a package whose code was fine. Removed with node rather than
+    # `rm -rf`, because a multi-line `run:` is PowerShell on the
+    # windows-latest matrices some of these repos use.
+    node -e "require('node:fs').rmSync('.third-party-allowlist',{recursive:true,force:true})"
 ```
 
 There are no per-repo copies, so there is nothing to drift. This repository is
