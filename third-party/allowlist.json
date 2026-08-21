@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-08-19",
+  "updated": "2026-08-20",
   "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
   "policy": {
     "scope": "direct-only",
@@ -489,11 +489,11 @@
       "npm": {},
       "composer": {}
     },
-    "@particle-academy/fancy-chart": {
+    "@particle-academy/fancy-trading-ui": {
       "npm": {
         "lightweight-charts": {
-          "reason": "The charting engine this package exists to wrap. Optional peer, never bundled. Chosen over echarts on measured evidence: echarts has no update-in-place API for a candlestick series, so a tick costs 18.45ms against 2.36ms on a realistic two-pane trading chart, at 3.6x the bundle. See .ai/plans/fancy-trading.md section 1.",
-          "review": "ATTRIBUTION IS OWED, AND IT IS INHERITED BY OUR CONSUMERS. Apache-2.0 with a NOTICE that npm does NOT ship. Every commercial consumer of a fancy-chart built on this must display either the on-chart attributionLogo (which defaults to true -- pass it through, never silently false) or the NOTICE text plus a link to https://www.tradingview.com/ on a user-facing page. The exact bytes to reproduce are in .ai/knowledge/lightweight-charts-attribution.md; copy them, do not retype -- the (c) in the NOTICE is Cyrillic U+0441, so grep '(c)' will not find it. Not legal advice."
+          "reason": "The charting engine behind this package's ./chart entry point. Optional peer, never bundled, and absent from the root entry's bundle so a consumer who installs the package for an order ticket never loads it. Chosen over echarts on measured evidence: echarts has no update-in-place API for a candlestick series, so a tick costs 18.45ms against 2.36ms on a realistic two-pane trading chart, at 3.6x the bundle. See .ai/plans/fancy-trading.md section 1.",
+          "review": "ATTRIBUTION IS OWED, AND IT IS INHERITED BY OUR CONSUMERS. Apache-2.0 with a NOTICE that npm does NOT ship. Every commercial consumer of a fancy-trading-ui chart built on this must display either the on-chart attributionLogo (which defaults to true -- pass it through, never silently false) or the NOTICE text plus a link to https://www.tradingview.com/ on a user-facing page. The exact bytes to reproduce are in .ai/knowledge/lightweight-charts-attribution.md; copy them, do not retype -- the (c) in the NOTICE is Cyrillic U+0441, so grep '(c)' will not find it. Not legal advice."
         }
       }
     }
