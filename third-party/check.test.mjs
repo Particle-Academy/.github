@@ -11,6 +11,7 @@ import {
   parsePackageJson,
   parseComposerJson,
   parsePyproject,
+  parseCargoToml,
   pyRequirementName,
   ownerOf,
   classify,
@@ -465,4 +466,118 @@ test('a grant keyed on the remote name applies even when the directory differs',
 test('a repo with no remote is still checked, just with one identity fewer', () => {
   const dir = tmpRepo({ 'package.json': { name: 'x' } });
   assert.equal(remoteRepoName(dir), null);
+});
+
+// ---------------------------------------------------------------------------
+// Cargo
+//
+// Added when the suite gained its first Rust packages. Before this the checker
+// spoke npm, Composer and PyPI, so a Rust repo passed the gate by being
+// invisible to it -- which is the same outcome as having no gate.
+// ---------------------------------------------------------------------------
+
+test('parseCargoToml reads every dependency block', () => {
+  const parsed = parseCargoToml(`
+[package]
+name = "my-crate"
+version = "0.1.0"
+
+[dependencies]
+serde_json = "1.0"
+
+[dev-dependencies]
+proptest = "1"
+
+[build-dependencies]
+cc = "1"
+`);
+
+  assert.equal(parsed.ecosystem, 'crates');
+  assert.equal(parsed.name, 'my-crate');
+  assert.deepEqual(
+    parsed.deps.map((d) => [d.name, d.field]),
+    [['serde_json', 'dependencies'], ['proptest', 'dev-dependencies'], ['cc', 'build-dependencies']],
+  );
+});
+
+test('parseCargoToml reports the REGISTRY name of a renamed crate', () => {
+  // `renamed = { version = "1", package = "tokio" }` installs tokio. A grant is
+  // about what is installed, not what the author chose to call it -- reading the
+  // key would let any dependency be smuggled past the allowlist by renaming it.
+  const parsed = parseCargoToml(`
+[package]
+name = "my-crate"
+
+[dependencies]
+renamed = { version = "1", package = "tokio" }
+`);
+  assert.deepEqual(parsed.deps.map((d) => d.name), ['tokio']);
+});
+
+test('parseCargoToml marks git and path dependencies by source', () => {
+  // Neither is a registry dependency: `path` is local and `git` fetches code no
+  // registry ever saw. They are reported rather than skipped, so an unapproved
+  // one is refused by name instead of slipping through a hole shaped exactly
+  // like the thing the gate exists to catch.
+  const parsed = parseCargoToml(`
+[package]
+name = "my-crate"
+
+[dependencies]
+fancy-json = { version = "0.1", git = "https://github.com/Particle-Academy/fancy-json-rs" }
+local = { path = "../local" }
+plain = "1.0"
+`);
+  assert.deepEqual(
+    parsed.deps.map((d) => [d.name, d.source]),
+    [['fancy-json', 'git'], ['local', 'path'], ['plain', 'registry']],
+  );
+});
+
+test('parseCargoToml handles target-conditional dependency tables', () => {
+  const parsed = parseCargoToml(`
+[package]
+name = "my-crate"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+`);
+  assert.deepEqual(parsed.deps.map((d) => [d.name, d.field]), [['libc', 'dependencies']]);
+});
+
+test('parseCargoToml ignores comments and non-dependency tables', () => {
+  const parsed = parseCargoToml(`
+[package]
+name = "my-crate"
+
+# [dependencies]
+# commented_out = "1"
+
+[features]
+default = ["std"]
+std = []
+
+[lints.clippy]
+pedantic = "warn"
+`);
+  assert.equal(parsed.name, 'my-crate');
+  assert.deepEqual(parsed.deps, []);
+});
+
+test('crates has no checkable owner, so every crate is listed individually', () => {
+  // Same shape as PyPI. There is no namespace in a crate name, so an
+  // author-level allow would be approving a string, not a person.
+  assert.equal(ownerOf('crates', 'serde_json'), null);
+  assert.equal(ownerOf('crates', 'fancy-json'), null);
+});
+
+test('an unapproved crate is refused and a first-party one is not', () => {
+  const allowlist = loadAllowlist(path.join(import.meta.dirname, 'allowlist.json'));
+
+  const refused = classify(allowlist, 'crates', 'serde_json', 'fancy-flow');
+  assert.equal(refused.allowed, false, 'serde_json is not on the allowlist');
+
+  const ours = classify(allowlist, 'crates', 'fancy-json', 'fancy-flow');
+  assert.equal(ours.allowed, true);
+  assert.equal(ours.via, 'first-party');
 });

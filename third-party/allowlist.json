@@ -24,6 +24,11 @@
       "holy-sheet",
       "dark-slide",
       "last-word"
+    ],
+    "crates": [
+      "fancy-json",
+      "fancy-flow",
+      "fancy-conformance"
     ]
   },
   "ecosystems": {
@@ -215,6 +220,12 @@
           "reason": "Static type checking for the Python packages."
         }
       }
+    },
+    "crates": {
+      "identity": "none",
+      "_note": "crates.io has no namespace, so author-level approval is not expressible and every crate is listed individually -- the same shape as pypi. A `git` or `path` dependency in a Cargo.toml is not a registry dependency at all; it must be first-party, because nothing about it is checkable here.",
+      "authors": {},
+      "packages": {}
     }
   },
   "packageGrants": {

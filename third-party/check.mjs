@@ -3,7 +3,8 @@
 //
 // Scope: DIRECT dependencies only. npm dependencies/devDependencies/
 // peerDependencies/optionalDependencies, Composer require/require-dev, Python
-// [project] dependencies + optional-dependencies + dependency-groups.
+// [project] dependencies + optional-dependencies + dependency-groups, Cargo
+// [dependencies] / [dev-dependencies] / [build-dependencies].
 //
 // Transitive dependencies inherit approval from their allowlisted direct parent
 // and are NOT enumerated. See third-party/README.md for what that does and does
@@ -47,6 +48,65 @@ export function parsePackageJson(pkg) {
     }
   }
   return { ecosystem: 'npm', manifest: 'package.json', name: pkg.name || null, deps };
+}
+
+// Cargo. `[dependencies]`, `[dev-dependencies]` and `[build-dependencies]`, plus
+// their `[target.'cfg(...)'.dependencies]` forms.
+//
+// A dependency is either `name = "1.0"` or `name = { version = "1.0", ... }`.
+// The table form is also where a `path` or `git` source hides, and those are
+// NOT registry dependencies: `path` is local, and `git` fetches code no
+// registry ever saw. Both are reported with their source so the caller can
+// refuse a third-party one rather than skip it silently -- skipping is how a
+// gate develops a hole exactly the shape of the thing it exists to catch.
+export function parseCargoToml(text) {
+  if (typeof text !== 'string') return null;
+  const lines = text.split(/\r?\n/);
+  const deps = [];
+  let name = null;
+  let section = null;
+
+  const DEP_SECTION = /^(?:target\.[^.]*\.)?(dependencies|dev-dependencies|build-dependencies)$/;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const header = line.match(/^\[([^\]]+)\]$/);
+    if (header) {
+      section = header[1].trim();
+      continue;
+    }
+
+    if (section === 'package') {
+      const m = line.match(/^name\s*=\s*"([^"]+)"/);
+      if (m) name = m[1];
+      continue;
+    }
+
+    if (!section || !DEP_SECTION.test(section)) continue;
+    const field = section.slice(section.lastIndexOf('.') + 1);
+
+    const m = line.match(/^([A-Za-z0-9_-]+)\s*=\s*(.+)$/);
+    if (!m) continue;
+    const [, depName, rhs] = m;
+
+    if (rhs.trim().startsWith('{')) {
+      // `package = "real-name"` renames the crate; the REGISTRY name is what a
+      // grant is about, so it wins over the key.
+      const renamed = rhs.match(/\bpackage\s*=\s*"([^"]+)"/);
+      const source = /\bgit\s*=/.test(rhs) ? 'git' : /\bpath\s*=/.test(rhs) ? 'path' : 'registry';
+      deps.push({ name: renamed ? renamed[1] : depName, field, spec: rhs.trim(), source });
+      continue;
+    }
+
+    const version = rhs.match(/^"([^"]*)"/);
+    if (!version) continue;
+    deps.push({ name: depName, field, spec: version[1], source: 'registry' });
+  }
+
+  if (!deps.length && !name) return null;
+  return { ecosystem: 'crates', manifest: 'Cargo.toml', name, deps };
 }
 
 export function parseComposerJson(composer) {
@@ -213,6 +273,11 @@ export function readManifests(repoDir) {
     const parsed = parsePyproject(fs.readFileSync(pyprojectPath, 'utf8'));
     if (parsed) out.push(parsed);
   }
+  const cargoPath = path.join(repoDir, 'Cargo.toml');
+  if (fs.existsSync(cargoPath)) {
+    const parsed = parseCargoToml(fs.readFileSync(cargoPath, 'utf8'));
+    if (parsed) out.push(parsed);
+  }
   // Applications declare no package name (px-ui-sandbox and fancy-starter-kit
   // both ship an unnamed package.json). A grant has to be scoped to SOMETHING,
   // so those fall back to the repo directory name -- which is also the key you
@@ -253,9 +318,9 @@ export function ownerOf(ecosystem, name) {
     // ownership, so the vendor prefix is a real, checkable identity.
     return name.includes('/') ? name.slice(0, name.indexOf('/')) : null;
   }
-  // PyPI has no namespace whatsoever. There is no owner in the requirement
-  // string, so author-level approval is not expressible for Python and every
-  // distribution is listed individually.
+  // PyPI and crates.io have no namespace whatsoever. There is no owner in the
+  // requirement string, so author-level approval is not expressible for Python
+  // or Rust, and every distribution is listed individually.
   return null;
 }
 
@@ -415,6 +480,24 @@ export async function lastActivity(ecosystem, name) {
     for (const f of data?.urls || []) times.push(f?.upload_time_iso_8601 || f?.upload_time);
     const t = maxIso(times);
     if (t === null) throw new Error(`PyPI returned no timestamps for ${name}`);
+    return t;
+  }
+
+  if (ecosystem === 'crates') {
+    // crates.io REQUIRES a User-Agent. Without one it answers 403 for every
+    // name, which a naive reader turns into "this crate does not exist" -- so a
+    // missing header would fail every Rust dependency for the wrong reason, or,
+    // worse, be papered over with a `notFound` skip.
+    const { data, notFound } = await getJson(
+      `https://crates.io/api/v1/crates/${encodeURIComponent(name)}`,
+      { 'User-Agent': 'particle-academy-third-party-check (https://github.com/Particle-Academy)' }
+    );
+    if (notFound) throw new Error(`crates.io has no crate ${name}`);
+    const times = [];
+    for (const v of data?.versions || []) times.push(v?.created_at || v?.updated_at);
+    times.push(data?.crate?.updated_at);
+    const t = maxIso(times);
+    if (t === null) throw new Error(`crates.io returned no timestamps for ${name}`);
     return t;
   }
 

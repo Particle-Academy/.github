@@ -186,3 +186,26 @@ stops running the check at all, and that is what the gate audit covers:
 --require-gate          with --sweep, also fail repos whose CI skips the check
 --json                  machine-readable output
 ```
+
+
+## Rust (`crates`)
+
+Added 2026-08-23, with the suite's first Rust packages. `Cargo.toml`'s
+`[dependencies]`, `[dev-dependencies]` and `[build-dependencies]` — including
+the `[target.'cfg(...)'.dependencies]` forms.
+
+Three things are worth knowing:
+
+- **A renamed crate is checked under its REGISTRY name.**
+  `renamed = { version = "1", package = "tokio" }` installs `tokio`, and a grant
+  is about what is installed. Reading the key would let any dependency be
+  smuggled past by renaming it.
+- **`git` and `path` dependencies are reported, not skipped.** Neither is a
+  registry dependency, so nothing about one is checkable — which means an
+  unapproved one must be refused by name rather than pass by being unreadable.
+- **crates.io requires a User-Agent.** Without one it answers 403 for every
+  name, which a naive reader turns into "this crate does not exist". The
+  freshness lookup sends one.
+
+crates.io has no namespace, so — exactly as with PyPI — author-level approval is
+not expressible and every crate is listed individually.
