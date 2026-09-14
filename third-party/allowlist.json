@@ -197,7 +197,7 @@
         },
         "fakerphp/faker": {
           "reason": "Test and seed data across the Laravel packages.",
-          "review": "FAILS THE FRESHNESS BAR. Last release 2026-02-04, last commit 2026-05-02 (FakerPHP/Faker, 109 days). Marginal and widely relied upon -- it arrives transitively with orchestra/testbench anyway, so the cheapest correct fix in most repos is dropping the direct require-dev entry and letting it be inherited."
+          "review": "FAILS THE FRESHNESS BAR. Last release 2026-02-04; last commit on the default branch 2026-02-04 (the repository was last pushed 2026-05-02, verified 2026-09-13). In a PACKAGE it arrives transitively with orchestra/testbench, so dropping the direct require-dev entry is correct there. In a Laravel APP it does not: apps have no testbench and laravel/framework lists faker under require-dev only, so nothing installs it and dropping the require breaks every factory that calls fake(). Owner decision 2026-09-13: the Laravel apps replace it with first-party fake data before the bar is enforced."
         },
         "http-interop/http-factory-guzzle": {
           "reason": "PSR-17 factory bridge required by knplabs/github-api and php-gitlab-api.",
