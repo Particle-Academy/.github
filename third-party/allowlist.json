@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-08-20",
+  "updated": "2026-09-13",
   "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
   "policy": {
     "scope": "direct-only",
@@ -165,6 +165,9 @@
         },
         "pestphp": {
           "reason": "Pest. The PHP test runner named in the suite's TDD rule."
+        },
+        "phpstan": {
+          "reason": "PHPStan, the static analyser behind the PHPStan check in ten prism PHP packages, and the rule sets and extensions the same vendor publishes for it. Approved by the owner on 2026-09-13."
         }
       },
       "packages": {
@@ -202,6 +205,12 @@
         "http-interop/http-factory-guzzle": {
           "reason": "PSR-17 factory bridge required by knplabs/github-api and php-gitlab-api.",
           "review": "FAILS THE FRESHNESS BAR. Last release and last commit both 2025-12-15 (246 days). It is a thin PSR-17 adapter; php-http/guzzle7-adapter or a locally-written factory would remove it. Both fancy-git-github-php and fancy-git-gitlab-php require it directly."
+        },
+        "rector/rector": {
+          "reason": "Automated refactoring; particle-academy/prism's Formatting check runs it alongside Pint. Approved by the owner on 2026-09-13."
+        },
+        "brianium/paratest": {
+          "reason": "Parallel test runner that `pest --parallel` requires; particle-academy/prism's CI and `composer test` use it. Approved by the owner on 2026-09-13."
         }
       }
     },
@@ -547,6 +556,102 @@
         "lightweight-charts": {
           "reason": "The charting engine behind this package's ./chart entry point. Optional peer, never bundled, and absent from the root entry's bundle so a consumer who installs the package for an order ticket never loads it. Chosen over echarts on measured evidence: echarts has no update-in-place API for a candlestick series, so a tick costs 18.45ms against 2.36ms on a realistic two-pane trading chart, at 3.6x the bundle. See .ai/plans/fancy-trading.md section 1.",
           "review": "ATTRIBUTION IS OWED, AND IT IS INHERITED BY OUR CONSUMERS. Apache-2.0 with a NOTICE that npm does NOT ship. Every commercial consumer of a fancy-trading-ui chart built on this must display either the on-chart attributionLogo (which defaults to true -- pass it through, never silently false) or the NOTICE text plus a link to https://www.tradingview.com/ on a user-facing page. The exact bytes to reproduce are in .ai/knowledge/lightweight-charts-attribution.md; copy them, do not retype -- the (c) in the NOTICE is Cyrillic U+0441, so grep '(c)' will not find it. Not legal advice."
+        }
+      }
+    },
+    "particle-academy/prism": {
+      "composer": {
+        "psr/http-message": {
+          "reason": "The PSR-7 interfaces. Over twenty streaming handlers type-hint StreamInterface, and the Require Checker gate fails unless it is declared directly.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/php-fig/http-message -- last commit on master 2023-04-04 (2.0 release); not archived",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "NOT a liveness finding. PSR-7 is an accepted, frozen PHP-FIG standard: the interfaces are not supposed to change, so no release is the expected state. The owner decided on 2026-09-13 to accept it on that basis. Re-verify at expiry that the repository is still not archived and PSR-7 has not been superseded."
+          }
+        }
+      }
+    },
+    "particle-academy/prism-opentelemetry": {
+      "composer": {
+        "open-telemetry/api": {
+          "reason": "The OpenTelemetry PHP API this package exists to integrate with Prism."
+        },
+        "open-telemetry/context": {
+          "reason": "OpenTelemetry context propagation, required directly by the integration.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/open-telemetry/opentelemetry-php -- last commit on main 2026-09-09; the read-only split package opentelemetry-php/context last changed 2025-10-19 (src/Context)",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "A split package of an active monorepo. The context code is stable and has not needed a change, while the project that owns it is committed to weekly. Approved by the owner on 2026-09-13."
+          }
+        },
+        "open-telemetry/sdk": {
+          "reason": "The OpenTelemetry PHP SDK the integration is tested against (require-dev)."
+        }
+      }
+    },
+    "particle-academy/prism-workspace": {
+      "composer": {
+        "league/flysystem": {
+          "reason": "The file storage abstraction prism-workspace's file store is built on."
+        },
+        "league/flysystem-path-prefixing": {
+          "reason": "Flysystem adapter that scopes a workspace to its root; the path guard sits on it.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/thephpleague/flysystem -- last commit on 3.x 2026-09-02 (league/flysystem 3.36.0 released the same day); the split package last changed 2026-01-23 (src/PathPrefixing)",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "A split package of an active monorepo. The adapter is small and stable; the project that owns it released 3.36.0 eleven days before verification. Approved by the owner on 2026-09-13."
+          }
+        }
+      }
+    },
+    "prism-labs": {
+      "_reason": "The Lab is a Laravel APPLICATION, so this grant is keyed on the REMOTE name (Particle-Academy/prism-labs) rather than its composer name, per the README.",
+      "composer": {
+        "open-telemetry/sdk": {
+          "reason": "The Lab exercises prism-opentelemetry end to end, which needs a real SDK to emit spans."
+        },
+        "open-telemetry/exporter-otlp": {
+          "reason": "Exports the Lab's spans over OTLP so the telemetry probe can be read back.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/open-telemetry/opentelemetry-php -- last commit on main 2026-09-09; the split package opentelemetry-php/exporter-otlp last changed 2026-02-05 (src/Contrib/Otlp)",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "A split package of an active monorepo, same finding as open-telemetry/context under prism-opentelemetry. Approved by the owner on 2026-09-13."
+          }
+        }
+      },
+      "npm": {
+        "playwright": {
+          "reason": "Drives the Lab's browser tests (devDependencies)."
+        }
+      }
+    },
+    "prism-sandbox": {
+      "_reason": "The sandbox is a Laravel APPLICATION, so this grant is keyed on the REMOTE name (Particle-Academy/prism-sandbox).",
+      "composer": {
+        "league/commonmark": {
+          "reason": "Renders the sandbox's documentation pages from Markdown."
+        },
+        "tempest/highlight": {
+          "reason": "Server-side code highlighting for the documentation pages."
+        }
+      }
+    },
+    "@particle-academy/prism": {
+      "_reason": "prism-ts. Keyed on its package.json name.",
+      "npm": {
+        "@eslint/js": {
+          "reason": "ESLint's own recommended JavaScript config, imported by prism-ts's eslint.config.js. eslint itself is already approved."
+        },
+        "globals": {
+          "reason": "Node global identifiers for the lint config of the conformance runner and agent scripts."
         }
       }
     }
