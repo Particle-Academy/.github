@@ -233,7 +233,14 @@
     "@particle-academy/fancy-echarts": {
       "npm": {
         "echarts": {
-          "reason": "The charting library this package exists to wrap. Peer, never bundled."
+          "reason": "The charting library this package exists to wrap. Peer, never bundled.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/apache/echarts -- last commit on the default branch 2026-09-12, pushed 2026-09-14",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "Last npm publish 2026-05-19, but the Apache project is committed to daily. Override approved by the owner on 2026-09-13."
+          }
         },
         "echarts-gl": {
           "reason": "ECharts' GL renderer, for the 3D chart types the wrapper exposes."
@@ -253,7 +260,14 @@
           }
         },
         "@googlemaps/js-api-loader": {
-          "reason": "The Google Maps engine adapter's loader. Google's own package."
+          "reason": "The Google Maps engine adapter's loader. Google's own package.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/googlemaps/js-api-loader -- last commit on the default branch 2026-09-13",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "Last npm publish 2026-06-09, 96 days before verification, but Google's repository is actively committed to. Override approved by the owner on 2026-09-13."
+          }
         }
       }
     },
@@ -427,7 +441,14 @@
       "_reason": "The showcase installs the PEER dependency of every wrapper it demonstrates. Those peers are approved for the wrapper that owns them; the host needs its own grant to install them, and listing them here keeps that explicit rather than promoting them to blanket approvals. Keyed on the REMOTE name (Particle-Academy/pa-ux-sandbox), not the envelope path repos/px-ui-sandbox -- the remote name is the identity that is the same here and in Actions.",
       "npm": {
         "echarts": {
-          "reason": "Peer of fancy-echarts, which the showcase demonstrates."
+          "reason": "Peer of fancy-echarts, which the showcase demonstrates.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/apache/echarts -- last commit on the default branch 2026-09-12, pushed 2026-09-14",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "Last npm publish 2026-05-19, but the Apache project is committed to daily. Same finding as the fancy-echarts grant. Override approved by the owner on 2026-09-13."
+          }
         },
         "echarts-gl": {
           "reason": "Peer of fancy-echarts, which the showcase demonstrates."
@@ -443,7 +464,14 @@
           }
         },
         "@googlemaps/js-api-loader": {
-          "reason": "Peer of fancy-map's Google engine adapter."
+          "reason": "Peer of fancy-map's Google engine adapter.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/googlemaps/js-api-loader -- last commit on the default branch 2026-09-13",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "Same finding as the fancy-map grant. Override approved by the owner on 2026-09-13."
+          }
         },
         "@xterm/xterm": {
           "reason": "Peer of fancy-term."
