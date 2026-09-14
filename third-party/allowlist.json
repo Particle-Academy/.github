@@ -243,7 +243,14 @@
           }
         },
         "echarts-gl": {
-          "reason": "ECharts' GL renderer, for the 3D chart types the wrapper exposes."
+          "reason": "ECharts' GL renderer, for the 3D chart types the wrapper exposes. Optional peer.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/ecomfe/echarts-gl (the ECharts team's GL extension for Apache ECharts) -- last commit on master 2026-05-28, same day as npm 2.1.0; later pushes are Dependabot branches",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "Past the 92-day bar on commits too, so this is NOT a liveness finding: it is the owner's decision (2026-09-13) that fancy-echarts supports Apache ECharts' own 3D extension. It stays an OPTIONAL peer, lazy-loaded only by <EChart3D>. Re-verify at expiry; if ecomfe/echarts-gl is still silent, bring it back to the owner rather than renewing."
+          }
         }
       }
     },
@@ -451,7 +458,14 @@
           }
         },
         "echarts-gl": {
-          "reason": "Peer of fancy-echarts, which the showcase demonstrates."
+          "reason": "Peer of fancy-echarts, which the showcase demonstrates.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/ecomfe/echarts-gl (the ECharts team's GL extension for Apache ECharts) -- last commit on master 2026-05-28, same day as npm 2.1.0; later pushes are Dependabot branches",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "Same finding as the fancy-echarts grant. Past the 92-day bar on commits too, so this is NOT a liveness finding: it is the owner's decision (2026-09-13) that fancy-echarts supports Apache ECharts' own 3D extension. It stays an OPTIONAL peer, lazy-loaded only by <EChart3D>. Re-verify at expiry; if ecomfe/echarts-gl is still silent, bring it back to the owner rather than renewing."
+          }
         },
         "leaflet": {
           "reason": "Peer of fancy-map, which the showcase demonstrates.",
