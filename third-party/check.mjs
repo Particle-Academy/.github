@@ -815,18 +815,61 @@ async function main() {
   }
 
   const result = await checkRepo(opts.repo, allowlist, checkOptions);
+
+  // "Nothing to check" is NOT a pass. A `--repo` run is an assertion that this
+  // tree should be checked, so finding no manifest at all means the invocation
+  // is wrong -- not that the tree is clean.
+  //
+  // Found 2026-09-21 by the Prism estate: a CI job running
+  // `pip install pytest mypy ruff`, three packages declared in no manifest,
+  // next to this checker reporting "0 direct dependencies, all approved".
+  // A green tick standing beside an install it never examined. Rote-fixing
+  // that workflow would have made the repo strictly WORSE while making every
+  // dashboard look better.
+  //
+  //   A missing check is honest. A vacuous one is reassuring.
+  //
+  // Note it is reported as a finding rather than an early return, so `--json`
+  // carries it too and the exit code comes from the same path as every other
+  // failure. Sweep mode is deliberately unaffected: there, a manifest-less
+  // directory is a legitimate skip rather than a bad invocation.
+  if (result.manifests.length === 0) {
+    result.findings.push({
+      level: 'error',
+      kind: 'no-manifest',
+      message:
+        `No manifest found in ${path.resolve(opts.repo)}, so nothing was checked and ` +
+        `nothing was approved. Either --repo points at the wrong tree, or what this job ` +
+        `installs is declared nowhere this can read -- declare it in a manifest, or point ` +
+        `--repo at the tree that actually gets installed.`,
+    });
+  }
+
   if (opts.json) {
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
   } else {
-    const errs = result.findings.filter((f) => f.level === 'error').length;
+    // Count DEPENDENCY errors separately from a missing manifest: they need
+    // opposite actions -- 'get this approved' vs 'there is nothing here to
+    // approve' -- and a summary that sends the reader to the wrong one is its
+    // own small defect, of exactly the kind this tool exists to surface.
+    const depErrs = result.findings.filter((f) => f.level === 'error' && f.kind !== 'no-manifest').length;
     process.stdout.write(`Third-party allowlist: ${result.checked.length} direct dependencies in ${path.resolve(opts.repo)}\n`);
     const body = render(result, { showAll: true });
     if (body) process.stdout.write(body + '\n');
-    if (errs) {
+    if (depErrs) {
       process.stdout.write(
-        `\n${errs} unapproved or stale direct ${errs === 1 ? 'dependency' : 'dependencies'}.\n` +
+        `\n${depErrs} unapproved or stale direct ${depErrs === 1 ? 'dependency' : 'dependencies'}.\n` +
         `Third-party code needs approval before it is added, and the project must have been active in the last ` +
         `${allowlist.policy?.freshnessDays ?? 92} days. See ${allowlist.docs || 'third-party/README.md'}.\n`
+      );
+    }
+    if (result.manifests.length === 0) {
+      process.stdout.write(
+        `
+Nothing was checked here, so this is a FAILURE rather than a pass.
+` +
+        `A gate that examines nothing still renders green, which is worse than no gate at all.
+`
       );
     }
   }
