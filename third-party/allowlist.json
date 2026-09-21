@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-09-13",
+  "updated": "2026-09-20",
   "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
   "policy": {
     "scope": "direct-only",
@@ -220,7 +220,14 @@
       "authors": {},
       "packages": {
         "pytest": {
-          "reason": "The Python test runner for the -py mirror packages."
+          "reason": "The Python test runner for the -py mirror packages.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/pytest-dev/pytest -- commits on the default branch 2026-09-17 and 2026-09-18, pushed 2026-09-20, not archived",
+            "verifiedOn": "2026-09-20",
+            "expires": "2026-12-20",
+            "why": "Last PyPI release 9.1.1 on 2026-06-19, which crossed the 92-day bar on 2026-09-19. The repository is committed to weekly; the project tags slowly, which is the gap this override exists for."
+          }
         },
         "ruff": {
           "reason": "Linter and formatter for the Python packages."
