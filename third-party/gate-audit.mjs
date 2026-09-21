@@ -87,6 +87,27 @@ async function auditRepo(repo) {
 }
 
 const repos = await listRepos();
+
+// The only reason this job carries a PAT is that the DEFAULT token cannot see
+// private repos -- it lists the public ones, audits them, and reports a clean
+// estate. An under-scoped or expired-and-replaced token fails the same way:
+// HTTP 200, a shorter list, green. There is no error to notice.
+//
+// So assert the thing the token was added FOR, rather than the thing it
+// returned. Zero private repos means either this audit is blind or the PAT is
+// pointless; both deserve a human, and neither deserves a silent pass.
+const privateRepos = repos.filter((r) => r.private);
+if (!privateRepos.length) {
+  console.error('FAIL: listed 0 private repos, so this audit is almost certainly blind.');
+  console.error('      A token that cannot read private repos returns 200 with a short');
+  console.error('      list -- indistinguishable from a clean estate.');
+  console.error('      Check GATE_AUDIT_TOKEN: it needs org read + repo contents read.');
+  console.error('      If this org genuinely has no private repos, DELETE this check --');
+  console.error('      do not downgrade it to a warning. A warning here goes unread and');
+  console.error('      the blindness comes back silently, which is what it did before.');
+  process.exit(1);
+}
+
 const results = [];
 for (const repo of repos) results.push(await auditRepo(repo));
 
@@ -95,7 +116,7 @@ const failing = results.filter((r) => !r.skipped && !r.gated);
 const partial = results.filter((r) => !r.skipped && r.gated && r.ungated?.length);
 const passing = results.filter((r) => !r.skipped && r.gated && !r.ungated?.length);
 
-process.stdout.write(`Gate audit for ${ORG}: ${repos.length} repos, ${skipped.length} without a manifest.\n\n`);
+process.stdout.write(`Gate audit for ${ORG}: ${repos.length} repos (${privateRepos.length} private), ${skipped.length} without a manifest.\n\n`);
 for (const r of failing) process.stdout.write(`FAIL ${r.name} -- ${r.reason}\n`);
 for (const r of partial) process.stdout.write(`WARN ${r.name} -- gated, but ${r.ungated.join(', ')} do not run the check\n`);
 process.stdout.write(`\n${passing.length} fully gated, ${partial.length} partially, ${failing.length} not at all.\n`);

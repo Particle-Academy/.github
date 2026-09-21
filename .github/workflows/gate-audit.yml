@@ -20,12 +20,37 @@ jobs:
         with:
           persist-credentials: false
 
+      # A missing secret must not degrade into a narrower audit. Checked as its
+      # own step so the failure names the cause, rather than surfacing later as
+      # "0 private repos" and sending someone to look at token scopes.
+      - name: Require the audit token
+        env:
+          GATE_AUDIT_TOKEN: ${{ secrets.GATE_AUDIT_TOKEN }}
+        run: |
+          if [ -z "$GATE_AUDIT_TOKEN" ]; then
+            echo "::error::GATE_AUDIT_TOKEN is not set, so this audit can only see PUBLIC repos."
+            echo "::error::It would pass having checked a subset -- which is the exact failure this job exists to catch."
+            echo "::error::Set a PAT with org read + repo contents read as the GATE_AUDIT_TOKEN secret."
+            exit 1
+          fi
+
       - name: Audit every repo in the org
         env:
-          # The default token reads public repos and lifts the anonymous API
-          # rate limit. Private repos in the org need a PAT with `repo`; without
-          # one they are simply absent from the listing, which is why the
-          # envelope sweep (`check.mjs --sweep --require-gate`) exists alongside
-          # this and is the authority for anything not public.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A PAT, NOT the default token, and deliberately with NO fallback to
+          # `secrets.GITHUB_TOKEN`.
+          #
+          # The default token cannot list private repos. They are not denied --
+          # they are simply ABSENT, so the audit returns 200, checks a subset,
+          # and reports a clean estate. A fallback would make a missing or
+          # expired secret look exactly like success.
+          #
+          # `gate-audit.mjs` additionally asserts it can SEE private repos, so an
+          # under-scoped token fails loudly as well as an unset one.
+          #
+          # This block used to name the envelope sweep (`check.mjs --sweep
+          # --require-gate`) as "the authority for anything not public". It never
+          # was: that sweep only sees submodules of ONE envelope, and three of
+          # the org's private repos are not submodules of it. Corrected
+          # 2026-09-21 after measuring, rather than re-reading the sentence.
+          GITHUB_TOKEN: ${{ secrets.GATE_AUDIT_TOKEN }}
         run: node third-party/gate-audit.mjs
