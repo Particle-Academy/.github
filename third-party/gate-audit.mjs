@@ -54,6 +54,21 @@ async function listRepos() {
   return out.filter((r) => !r.archived);
 }
 
+// A workflow only needs the allowlist check if it INSTALLS something. This
+// used to match on filename -- publish/ci/test/third-party -- which was a
+// stand-in for "probably installs dependencies" and stopped being true the
+// moment the PHP changelog gate was renamed to publish.yml on 2026-09-21.
+// That rename took this audit from 8 warnings to 21, all of them false: a
+// changelog gate installs nothing and has nothing to allowlist.
+//
+// Warnings that are wrong are not harmless. 21 of them is where a real one
+// goes to hide, and the audit prints them every night.
+//
+// Asking the file what it DOES rather than what it is called also widens the
+// net: a workflow that installs under any other name was previously invisible
+// here.
+const INSTALLS_DEPENDENCIES = /(composer\s+(install|update|require)|npm\s+(ci|install)|pnpm\s+(install|add)|yarn\s+(install|add)|pip\s+install|uv\s+(sync|pip)|poetry\s+install|cargo\s+(build|fetch))/;
+
 async function auditRepo(repo) {
   const name = repo.name;
   const root = await api(`/repos/${ORG}/${name}/contents/?ref=${repo.default_branch}`);
@@ -75,7 +90,7 @@ async function auditRepo(repo) {
     if (!res.ok) throw new Error(`fetch ${name}/${f.name} -> HTTP ${res.status}`);
     const text = await res.text();
     if (text.includes(MARKER)) { anyGated = true; continue; }
-    if (/^(publish|ci|test|third-party)\.ya?ml$/i.test(f.name)) ungated.push(f.name);
+    if (INSTALLS_DEPENDENCIES.test(text)) ungated.push(f.name);
   }
   return {
     name,
