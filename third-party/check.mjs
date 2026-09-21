@@ -16,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { ungatedJobs } from './gate-graph.mjs';
 
 export const SCHEMA_VERSION = 1;
 
@@ -689,11 +690,13 @@ export function gateStatus(repoDir) {
   for (const f of files) {
     if (f === 'no-mcp-secrets.yml') continue;
     const text = fs.readFileSync(path.join(dir, f), 'utf8');
-    const gated = text.includes(GATE_MARKER);
-    // Release gates and the fast PR suites are the two positions that matter.
-    const matters = /^(publish|ci|test)\.ya?ml$/i.test(f);
-    if (!matters) continue;
-    (gated ? present : missing).push(f);
+    // Per JOB, not per file, and by what each job DOES rather than what the
+    // file is called. A gate in a parallel job let the install run first;
+    // a filename allowlist never looked at build.yml or dogfood.yml at all.
+    // Both reasons, and the measurements, are in gate-graph.mjs.
+    const ungated = ungatedJobs(text);
+    if (ungated.length) missing.push(...ungated.map((j) => f + ':' + j));
+    else if (text.includes(GATE_MARKER)) present.push(f);
   }
   return { workflows: files, present, missing, hasWorkflows: true };
 }

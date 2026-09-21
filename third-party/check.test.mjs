@@ -339,15 +339,30 @@ test('a cache hit inside the TTL is reused instead of refetching', async () => {
 // Distribution: the gate has to actually be wired to something
 // ---------------------------------------------------------------------------
 
-test('gateStatus reports which release/CI workflows run the check', () => {
+// Rewritten 2026-09-21 when the rule changed, NOT loosened to pass. The old
+// version asserted the old contract: `ci.yml` was reported as missing a gate
+// because its FILENAME was on a hardcoded list, even though it only ran
+// `npm test` and installs nothing. That is the defect, encoded as an
+// expectation. The new contract is per-job and behavioural.
+test('gateStatus reports which JOBS install without the gate having passed', () => {
+  const gateStep = '      - run: node .allowlist/third-party/check.mjs --repo .\n';
   const dir = tmpRepo({
-    '.github/workflows/publish.yml': 'steps:\n  - run: node .allowlist/third-party/check.mjs --repo .\n',
-    '.github/workflows/ci.yml': 'steps:\n  - run: npm test\n',
-    '.github/workflows/no-mcp-secrets.yml': 'steps:\n  - run: true\n',
+    // Gate before the install, same job -- blocked.
+    '.github/workflows/publish.yml':
+      'jobs:\n  publish:\n    steps:\n' + gateStep + '      - run: npm ci\n',
+    // Installs nothing, so it is not asked to carry a gate. Under the old
+    // filename rule this was reported as ungated.
+    '.github/workflows/ci.yml': 'jobs:\n  t:\n    steps:\n      - run: npm test\n',
+    // Installs with the gate in a PARALLEL job -- a report, not a gate. The old
+    // rule saw check.mjs in the file and called the whole file gated.
+    '.github/workflows/build.yml':
+      'jobs:\n  allowlist:\n    steps:\n' + gateStep +
+      '  app:\n    steps:\n      - run: composer install\n',
+    '.github/workflows/no-mcp-secrets.yml': 'jobs:\n  s:\n    steps:\n      - run: true\n',
   });
   const status = gateStatus(dir);
   assert.deepEqual(status.present, ['publish.yml']);
-  assert.deepEqual(status.missing, ['ci.yml']);
+  assert.deepEqual(status.missing, ['build.yml:app']);
 });
 
 test('a repo with no workflows is reported, not silently passed', () => {
