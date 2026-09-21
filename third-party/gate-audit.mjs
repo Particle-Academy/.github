@@ -113,7 +113,11 @@ const repos = await listRepos();
 // pointless; both deserve a human, and neither deserves a silent pass.
 const privateRepos = repos.filter((r) => r.private);
 if (!privateRepos.length) {
-  console.error('FAIL: listed 0 private repos, so this audit is almost certainly blind.');
+  console.error(`FAIL: listed ${repos.length} repos and 0 of them private, so this audit is blind.`);
+  console.error('      The repo count discriminates: a number in the hundreds means the token');
+  console.error('      authenticates but its resource owner is not this org (a personal-account');
+  console.error('      token sees public repos here and nothing else). A small number means it');
+  console.error('      is scoped to a subset. Zero means it is not authenticating at all.');
   console.error('      A token that cannot read private repos returns 200 with a short');
   console.error('      list -- indistinguishable from a clean estate.');
   console.error('      Check GATE_AUDIT_TOKEN: it needs org read + repo contents read.');
