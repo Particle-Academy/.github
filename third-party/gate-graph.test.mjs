@@ -177,6 +177,76 @@ test('a commented-out gate does not count as a gate', () => {
   assert.deepEqual(ungatedJobs(wf), ['j']);
 });
 
+test('an install performed by an ACTION counts as an install', () => {
+  // prism/phpstan.yml, hand-checked by the Prism estate 2026-09-21. It pulls
+  // the whole dependency tree through `uses:`, so a detector asking "does a
+  // run: string contain an install command" reported it gated. 27 jobs across
+  // 10 repos were ungated the entire time and read clean.
+  const wf = `jobs:
+  phpstan:
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+      - name: Install composer dependencies
+        uses: ramsey/composer-install@v3
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan
+`;
+  assert.deepEqual(ungatedJobs(wf), ['phpstan']);
+});
+
+test('an action that installs a RUNTIME is not an install', () => {
+  // The whole reason the list is named rather than heuristic. Every action in
+  // the fancy estate is one of these: they provide a toolchain, not a
+  // dependency tree, and treating them as installs would bury the real ones.
+  for (const action of [
+    'actions/setup-node@v4',
+    'shivammathur/setup-php@v2',
+    'actions/setup-python@v5',
+    'dtolnay/rust-toolchain@stable',
+    'actions/setup-go@v5',
+    'actions/cache@v4',
+  ]) {
+    const wf = `jobs:
+  j:
+    steps:
+      - uses: ${action}
+      - run: echo build
+`;
+    assert.deepEqual(ungatedJobs(wf), [], action);
+  }
+});
+
+test('a conditional installer counts only when asked to install', () => {
+  const off = `jobs:
+  j:
+    steps:
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+`;
+  assert.deepEqual(ungatedJobs(off), []);
+
+  const on = `jobs:
+  j:
+    steps:
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: true
+`;
+  assert.deepEqual(ungatedJobs(on), ['j']);
+});
+
+test('an installing action IS blocked by a gate above it', () => {
+  const wf = `jobs:
+  j:
+    steps:
+${GATE}      - uses: ramsey/composer-install@v3
+`;
+  assert.deepEqual(ungatedJobs(wf), []);
+});
+
 test('a needs cycle terminates instead of hanging', () => {
   const wf = `jobs:
   a:

@@ -30,6 +30,46 @@ const GATE_MARKER = 'third-party/check.mjs';
 const INSTALLS =
   /(composer\s+(install|update|require)|npm\s+(ci|install)|pnpm\s+(install|add)|yarn\s+(install|add)|pip\s+install|uv\s+(sync|pip)|poetry\s+install|cargo\s+(build|fetch))/;
 
+// An install does not have to be a `run:` command.
+//
+// Found by the Prism estate on 2026-09-21, after this detector had already
+// cleared their repos: `ramsey/composer-install@v3` pulls the whole dependency
+// tree through `uses:`, and asking "does a run: string contain an install
+// command" cannot see it. Twenty-seven jobs across ten of their repos were
+// ungated the entire time and reported clean.
+//
+// This is the worst shape on our ledger because it fails silent and green in
+// BOTH directions, and nobody investigates a clean report.
+//
+// A NAMED LIST, deliberately, rather than "any unrecognised action is
+// suspicious". Most actions install a RUNTIME (setup-node, setup-php,
+// setup-python, rust-toolchain) and not a dependency tree, so treating the
+// unknown as an install would bury the real ones -- the same noise problem that
+// made the filename rule useless. Add to this list when a new installer appears;
+// a name that is wrong here is visible, whereas a heuristic that is wrong is not.
+const INSTALLING_ACTIONS = [
+  'ramsey/composer-install',
+  'bahmutov/npm-install',
+  'borales/actions-yarn',
+  'py-actions/py-dependency-install',
+  'awalsh128/cache-apt-pkgs-action',
+];
+
+// `pnpm/action-setup` and `astral-sh/setup-uv` install a TOOL by default and a
+// dependency tree only when asked, so they are judged on their inputs.
+const CONDITIONAL_INSTALLERS = [
+  { action: 'pnpm/action-setup', when: /run_install:\s*(?!false)/ },
+  { action: 'astral-sh/setup-uv', when: /(enable-cache|args):/ },
+];
+
+function stepInstalls(step) {
+  if (INSTALLS.test(step)) return true;
+  if (INSTALLING_ACTIONS.some((a) => step.includes('uses: ' + a))) return true;
+  return CONDITIONAL_INSTALLERS.some(
+    (c) => step.includes('uses: ' + c.action) && c.when.test(step),
+  );
+}
+
 /**
  * Read one workflow into `{ job: { needs, steps, text } }`.
  *
@@ -149,7 +189,7 @@ export function ungatedJobs(text) {
 
   const ungated = [];
   for (const [name, job] of Object.entries(jobs)) {
-    const installAt = job.steps.findIndex((st) => INSTALLS.test(executable(st)));
+    const installAt = job.steps.findIndex((st) => stepInstalls(executable(st)));
     if (installAt === -1) continue;
     const gateAt = job.steps.findIndex((st) => executable(st).includes(GATE_MARKER));
     if (gateAt !== -1 && gateAt < installAt) continue;
