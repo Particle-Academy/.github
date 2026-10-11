@@ -392,6 +392,14 @@
         }
       }
     },
+    "fancy-inertia-server": {
+      "pypi": {
+        "starlette": {
+          "reason": "The framework this adapter exists to integrate with, as a TEST dependency only -- it is not in [project] dependencies and never reaches a consumer. Covered by the envelope's standing carve-out of 2026-10-06 (RULES.md, rule 1): 'the framework a package exists to integrate with, as a TEST dependency ... fancy-inertia-server may carry Starlette. No approval needed.' This entry does not grant that approval; it is the gate finally expressing a ruling that was already made, and the grant is deliberately narrow so it covers no other package. The carve-out explicitly does NOT extend to convenience -- httpx to drive a test server would still need approving.",
+          "why": "Without it the suite tests the wrong half. fancy-inertia-server soft-imports Starlette so FastAPI gets a response type it recognises; with Starlette absent, all 17 conformance fixtures ran the raw-ASGI fallback -- the branch no FastAPI consumer ever reaches -- and installing it immediately exposed a test that had been asserting nothing."
+        }
+      }
+    },
     "@particle-academy/fancy-git-github": {
       "npm": {
         "octokit": {
