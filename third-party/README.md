@@ -97,13 +97,37 @@ AND that the publisher is us — `https://pypi.org/pypi/<name>/json`, read
 `info.author`. Add names **on publish**, never in advance. An unpublished name
 is the dangerous case, because it reads as merely premature.
 
-This is not hypothetical. The nine `prism-ai-*` entries were added on
-2026-10-11, and the obvious tenth — `prism-ai` — **is not ours**: it is an empty
-0.1.0 by an unrelated author, while our own core distribution is
-`prism-ai-core`. Listing the family by eye would have granted blanket approval
-to someone else's package on the single name a reader is most likely to assume
-is ours. `prism-ai-mcp-server` was also left out, for a different reason: it is
-unpublished, and as the *consumer* it never needs approval for itself.
+This is not hypothetical, and it has already happened here twice.
+
+The nine `prism-ai-*` entries were added on 2026-10-11, and the obvious tenth —
+`prism-ai` — **is not ours**: it is an empty 0.1.0 by an unrelated author, while
+our own core distribution is `prism-ai-core`. Listing the family by eye would
+have granted blanket approval to someone else's package on the single name a
+reader is most likely to assume is ours. `prism-ai-mcp-server` was also left
+out, for a different reason: it is unpublished, and as the *consumer* it never
+needs approval for itself.
+
+Checking that found the **live** case, which had been sitting in this list since
+it was written. Three entries — `holy-sheet`, `dark-slide`, `last-word` — named
+distributions that **do not exist on PyPI and never did**. Our Python ports
+publish as `fancy-holy-sheet`, `fancy-dark-slide` and `fancy-last-word`; the
+list had the *Composer/repo* names, where the `particle-academy` vendor prefix
+makes the bare form correct. So the three entries were wrong in both directions
+at once: a real dependency on `fancy-holy-sheet` would have been **rejected**,
+while all three bare names stood pre-approved as "Ours." for whoever registered
+them first. Corrected the same day.
+
+Note which half of that was dangerous. The rejection would have surfaced
+immediately, the way the `prism-ai-mcp` finding did — a red job and a filed
+request. The pre-approval was silent, and would have stayed silent until someone
+used it.
+
+`fancy-conformance` remains in the list and is the one open case: the name is
+right, but the owner ruled it is never published to PyPI (consumers pin it by
+git tag, and every manifest here reaches it through `pythonpath`, not a
+requirement). Nothing depends on it as a registry package, so the entry approves
+nothing legitimate while leaving the name squattable. Removing it is pending the
+owner's decision rather than done, because it touches that ruling.
 
 ## Freshness, and the override
 
