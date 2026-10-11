@@ -85,6 +85,26 @@ A direct dependency passes if any one of these matches.
 First-party packages (`@particle-academy/*`, `particle-academy/*`, and the named
 Python distributions) are ours and are not a dependency question.
 
+**For PyPI, "ours" is a claim that must be CHECKED before the name is listed.**
+On npm and Packagist the registry enforces ownership of the scope or vendor, so
+a first-party prefix cannot be wrong. On PyPI there is no namespace, so an entry
+in `firstParty.pypi` is a bare assertion that *we* own that distribution name —
+and the checker then approves whatever is published under it, by anyone. A name
+we do not own, or do not own yet, is an unconditional grant to a stranger.
+
+So: before adding a distribution to `firstParty.pypi`, confirm it is published
+AND that the publisher is us — `https://pypi.org/pypi/<name>/json`, read
+`info.author`. Add names **on publish**, never in advance. An unpublished name
+is the dangerous case, because it reads as merely premature.
+
+This is not hypothetical. The nine `prism-ai-*` entries were added on
+2026-10-11, and the obvious tenth — `prism-ai` — **is not ours**: it is an empty
+0.1.0 by an unrelated author, while our own core distribution is
+`prism-ai-core`. Listing the family by eye would have granted blanket approval
+to someone else's package on the single name a reader is most likely to assume
+is ours. `prism-ai-mcp-server` was also left out, for a different reason: it is
+unpublished, and as the *consumer* it never needs approval for itself.
+
 ## Freshness, and the override
 
 The bar is a release **or a commit** within 92 days. Registries only report

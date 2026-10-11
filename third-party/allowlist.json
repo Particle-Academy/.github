@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-09-20",
+  "updated": "2026-10-11",
   "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
   "policy": {
     "scope": "direct-only",
@@ -23,7 +23,16 @@
       "fancy-conformance",
       "holy-sheet",
       "dark-slide",
-      "last-word"
+      "last-word",
+      "prism-ai-core",
+      "prism-ai-browser",
+      "prism-ai-harness",
+      "prism-ai-human-plus",
+      "prism-ai-mcp",
+      "prism-ai-memory",
+      "prism-ai-opentelemetry",
+      "prism-ai-perplexity",
+      "prism-ai-workspace"
     ],
     "crates": [
       "fancy-json",
