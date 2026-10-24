@@ -661,7 +661,14 @@
       "_reason": "prism-ts. Keyed on its package.json name.",
       "npm": {
         "@eslint/js": {
-          "reason": "ESLint's own recommended JavaScript config, imported by prism-ts's eslint.config.js. eslint itself is already approved."
+          "reason": "ESLint's own recommended JavaScript config, imported by prism-ts's eslint.config.js. eslint itself is already approved.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/eslint/eslint -- pushed 2026-10-23; release v10.13.0 2026-10-16 (https://github.com/eslint/eslint/releases/tag/v10.13.0)",
+            "verifiedOn": "2026-10-24",
+            "expires": "2027-01-24",
+            "why": "@eslint/js 10.0.1 was last published 2026-02-06 and packages/js was last touched 2026-05-30, but it ships from the actively maintained eslint/eslint monorepo alongside ESLint itself. It holds only ESLint's recommended config. Approved by Wish 2026-10-24 (prism-ts G-120 release). If ESLint's recommended config moves elsewhere before re-verification, follow it rather than renewing."
+          }
         },
         "globals": {
           "reason": "Node global identifiers for the lint config of the conformance runner and agent scripts."
