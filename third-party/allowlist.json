@@ -586,6 +586,20 @@
         }
       }
     },
+    "particle-academy/prism-human-plus": {
+      "composer": {
+        "psr/http-message": {
+          "reason": "The PSR-7 interfaces. The Human+ relay takes a PSR-7 response/stream and already received this package transitively through particle-academy/prism; it is now declared directly so the Require Checker gate passes. Declaring it adds no new code to the dependency tree.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/php-fig/http-message -- last commit on master 2023-04-04 (2.0 release); not archived",
+            "verifiedOn": "2026-09-13",
+            "expires": "2026-12-13",
+            "why": "NOT a liveness finding. PSR-7 is an accepted, frozen PHP-FIG standard: the interfaces are not supposed to change, so no release is the expected state. The owner decided on 2026-09-13 to accept it on that basis (granted to particle-academy/prism); this extends the same grant, evidence and expiry to particle-academy/prism-human-plus. Re-verify at expiry that the repository is still not archived and PSR-7 has not been superseded."
+          }
+        }
+      }
+    },
     "particle-academy/prism-opentelemetry": {
       "composer": {
         "open-telemetry/api": {
