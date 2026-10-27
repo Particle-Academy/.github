@@ -40,5 +40,11 @@ jobs:
 
       # The allowlist is data the checker reads at runtime; a malformed one
       # would fail every repo in the suite at once, so it is parsed here too.
+      # It runs against a fixture manifest, not this repo's root: the root has no
+      # manifest, and since a9ace47 a manifest-less run FAILS rather than
+      # passing vacuously, so `--repo .` left this step red on main from b3b5e49
+      # onward. The fixture exercises a first-party scope, a vendor-wide
+      # approval and a dev dependency against the live allowlist; a malformed
+      # allowlist (exit 2) or an unapproved dependency (exit 1) turns it red.
       - name: Allowlist self-check
-        run: node third-party/check.mjs --repo . --freshness off
+        run: node third-party/check.mjs --repo third-party/fixtures/self-check --freshness off

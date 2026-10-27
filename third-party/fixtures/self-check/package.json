@@ -1,0 +1,12 @@
+{
+  "name": "allowlist-self-check",
+  "private": true,
+  "description": "Fixture for .github CI: a manifest the checker must approve against the live allowlist. Exercises first-party scope, a vendor-wide ecosystem approval and a dev dependency.",
+  "dependencies": {
+    "@particle-academy/react-fancy": ">=5.0.0 <6.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@particle-academy/fancy-conformance": "^0.36.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "name": "particle-academy/allowlist-self-check",
+    "description": "Fixture for .github CI: a manifest the checker must approve against the live allowlist.",
+    "type": "library",
+    "require": {
+        "php": "^8.4",
+        "particle-academy/fancy-expr": ">=0.2.0 <2.0",
+        "illuminate/support": "^13.0"
+    }
+}
