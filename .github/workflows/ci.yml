@@ -35,10 +35,13 @@ jobs:
             exit 1
           fi
 
+      # This also guards the allowlist itself: the checker reads it at runtime,
+      # so a malformed one would fail every repo in the suite at once.
+      # check.test.mjs loads the SHIPPED allowlist.json and asserts it parses,
+      # matches the schema version and gives every entry a reason. There used to
+      # be a separate `check.mjs --repo .` step for this; it went red on
+      # 2026-10-27 once the checker refused manifest-less trees (no-manifest),
+      # because this repo has no manifest, and never checked more than the
+      # tests already do.
       - name: Test
         run: node --test "third-party/*.test.mjs"
-
-      # The allowlist is data the checker reads at runtime; a malformed one
-      # would fail every repo in the suite at once, so it is parsed here too.
-      - name: Allowlist self-check
-        run: node third-party/check.mjs --repo . --freshness off
