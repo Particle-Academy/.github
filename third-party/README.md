@@ -179,11 +179,83 @@ package deep inside somebody else's dependency tree. A green check here is not
 supply-chain coverage and must never be read as any. Dependabot and the registry
 advisory feeds are what cover that ground; this check does not overlap with them.
 
+### A direct listing that an approved dependency also requires
+
+Owner's ruling, 2026-10-31: *"dependencies of our whitelisted dependencies
+inherit their status from what we use."* That already covered everything an
+approved dependency pulls in. The ruling extends it to a package we **also**
+list directly, when an approved direct dependency requires it anyway.
+
+The motivating case: a Laravel app lists `nunomaduro/collision` in
+`require-dev`, and `pestphp/pest` (approved through the `pestphp` author entry)
+itself requires `nunomaduro/collision ^8.9.4`. Removing the direct line would
+change nothing that gets installed, so failing collision for freshness or
+approval while passing it as Pest's transitive was a distinction with no
+difference.
+
+A direct dependency **D** that fails its own check inherits from parent **P**
+only when **all** of these hold:
+
+- **P is a direct dependency of the same manifest** in the same repo.
+- **P is approved** (author, package or grant) **and passes its own check**:
+  approval, freshness, override expiry, lookup. First-party packages are not
+  parents; ours is not an approval decision.
+- **The repo's lockfile records P requiring D.** `composer.lock`: the
+  `packages` / `packages-dev` entry's `require`. `package-lock.json` v2/v3: the
+  top-level `packages["node_modules/<P>"]` entry's `dependencies`,
+  `peerDependencies` or `optionalDependencies`. A dependency's own
+  `require-dev` / `devDependencies` are not edges, because they are never
+  installed for a consumer. **An optional peer is not an edge either**
+  (`peerDependenciesMeta.<x>.optional`): the parent works without it and npm
+  does not install it, so choosing it is our decision. That is exactly the
+  decision this list gates. `laravel-echo` declares `pusher-js` this way, and
+  a stale `pusher-js` does not inherit from it. The checker never looks the edge up on the network
+  and never infers it from names.
+- **One level only.** P must pass on its **own**. A package that passes only by
+  inheriting cannot pass that status on, so chains are not followed.
+
+What D can inherit its way out of: `unapproved`, `stale`, `lookup-failed` and
+`expired-override`. **Not** `bad-override`. That is a defect in this allowlist,
+not a fact about the package, and no parent can vouch for it.
+
+**An inherited pass is reported, never silent.** It prints as its own line:
+
+```
+  INHERITED nunomaduro/collision via pestphp/pest -- pestphp/pest is approved (author) and passes its own check, and composer.lock records it requiring nunomaduro/collision. Waived: stale.
+```
+
+In `--json` it is a finding of `kind: "inherited"` (level `note`, so it does not
+fail the build) carrying `parent`, `parentVia`, `parents`, `lockfile`, and
+`waived`: the findings it would otherwise have failed on, kept whole. The
+dependency's record in `checked` carries `inheritedFrom`. A package that passes
+on its own is **not** reported as inherited, even when a parent requires it.
+
+**What it does not cover:**
+
+- **A direct listing that no approved direct dependency requires still needs
+  approval like anything else.** Being popular, being in `vendor/`, or being
+  required by something that is merely installed (not listed by us) is not a
+  parent.
+- **No lockfile means no inheritance.** Neither does npm lockfile v1, which has
+  no `packages` map. Neither does a lockfile that does not show the edge. The
+  normal check applies, which is the safe direction to be incomplete in.
+- **Python and Rust get no inheritance.** A pyproject repo has no single
+  lockfile format, and `Cargo.lock` was left out to keep this change to the two
+  ecosystems the ruling was about. Both fall back to the normal check.
+- **Inheritance follows the lockfile, so it moves when the lockfile does.** If
+  Pest drops collision in a future release and the lock is updated, the direct
+  listing goes back to being checked on its own. That is correct: the reason it
+  passed is gone.
+
 **The promotion case.** A package can be transitive today and direct tomorrow —
-someone imports it directly because it is "already in `node_modules`". At that
-moment it needs approval, and the check will correctly start failing. **That is
-the system working, not a false positive.** Do not fix it by adding a blanket
-entry; raise the approval request the same as for anything else.
+someone imports it directly because it is "already in `node_modules`". If an
+approved direct dependency still requires it (and the lockfile shows it), it
+now inherits that dependency's status and prints as `INHERITED`. That is the
+ruling above, not a loophole: nothing new is installed by listing it. If **no**
+approved direct dependency requires it, it needs approval at that moment and
+the check will correctly start failing. **That is the system working, not a
+false positive.** Do not fix it by adding a blanket entry; raise the approval
+request the same as for anything else.
 
 ## Distribution
 
