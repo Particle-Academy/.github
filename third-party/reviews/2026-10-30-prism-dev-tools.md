@@ -21,14 +21,16 @@ registry freshness. The observed npm registry freshness cutoff is
 
 ## Collision requires an actual dependency edge
 
-Neither application currently installs Pest. An allow-plugins permission does
-not install a package. The owner chose Pest4 or newer, specifically current
+At the original review neither application installed Pest. An allow-plugins
+permission does not install a package. The owner chose Pest4 or newer, specifically current
 Pest5 with PHPUnit13, and asked for separate application contributions. No
 pestphp/pest-plugin-laravel dependency is added. Each selected Pest/Collision
 edge must be present in the actual application's lock and accepted by the
-separate owner-controlled inheritance checker in .github PR8. That prerequisite
-is not supplied by this grant contribution; no green inheritance claim is made
-before the rule and actual application dependency changes merge.
+inheritance checker merged through .github PR8 at 00f21df8465f4437a0a88ca9aad7ee5ad9440136.
+Rule B requires the actual repository lock edge from an approved, passing
+direct Pest dependency to Collision. Separate application Pest contributions
+and their reviewed consumer pins supply that edge; this grant contribution
+does not establish application inheritance or installation.
 
 There is no Collision exception, false claim of recent upstream activity or
 removal of the php artisan test runner. Original proposals and baseline CI
@@ -43,7 +45,8 @@ Forecasts use explicit future clocks; they do not claim a future CI observation.
 The Collision negative fixture contains no Pest lock edge and must remain stale.
 
 The existing checker enforces identity and expiry; no new checker behavior or
-manifest-field restriction is introduced here. Owner PR6 fixes the unrelated
-baseline self-check; actual merge/rebase and fresh PR CI are required. Assigned
+manifest-field restriction is introduced here. Owner PR6 fixed the unrelated
+baseline self-check at 1137f43f, and PR8 subsequently merged at 00f21df8. This
+contribution is rebased onto that actual main; fresh head-bound PR CI is required. Assigned
 maintainer owns merges. Consumers must advance reviewed policy pins and hashes
 separately after actual policy publication.
