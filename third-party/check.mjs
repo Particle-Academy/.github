@@ -7,8 +7,11 @@
 // [dependencies] / [dev-dependencies] / [build-dependencies].
 //
 // Transitive dependencies inherit approval from their allowlisted direct parent
-// and are NOT enumerated. See third-party/README.md for what that does and does
-// not protect against.
+// and are NOT enumerated. A package that is listed directly AND is required by
+// an approved direct dependency (proven from the repo's lockfile) inherits that
+// parent's status too, one level only, and is reported as INHERITED -- see
+// `inheritFromApprovedParents`. See third-party/README.md for what that does
+// and does not protect against.
 //
 // NO THIRD-PARTY DEPENDENCIES. Node standard library only -- a tool that polices
 // dependencies and carries its own would be a joke at its own expense.
@@ -289,6 +292,84 @@ export function readManifests(repoDir) {
 }
 
 // ---------------------------------------------------------------------------
+// Lockfile edges -- what an installed package PROVABLY requires
+//
+// Used only for inheritance (see `inheritFromApprovedParents`). An edge exists
+// when the repo's own lockfile records that package P requires package C, and
+// nowhere else: never the network, never a guess from names. No lockfile, or a
+// lockfile that does not record the edge, means no edge.
+// ---------------------------------------------------------------------------
+
+// composer.lock: `packages` + `packages-dev`, each entry's `require`. An
+// entry's own `require-dev` is NOT an edge -- Composer never installs a
+// dependency's dev requirements for a consumer.
+export function composerLockEdges(lock) {
+  const edges = new Map();
+  if (!lock || typeof lock !== 'object') return edges;
+  for (const section of ['packages', 'packages-dev']) {
+    for (const pkg of Array.isArray(lock[section]) ? lock[section] : []) {
+      if (!pkg || typeof pkg.name !== 'string') continue;
+      const children = new Set();
+      for (const name of Object.keys(pkg.require || {})) {
+        if (!PLATFORM_RE.test(name)) children.add(name.toLowerCase());
+      }
+      edges.set(pkg.name.toLowerCase(), children);
+    }
+  }
+  return edges;
+}
+
+// package-lock.json v2/v3: `packages["node_modules/<name>"]`, its
+// `dependencies`, `peerDependencies` (minus OPTIONAL peers) and
+// `optionalDependencies`. Only the
+// TOP-LEVEL install path counts: a direct dependency is installed there, and a
+// nested copy (`node_modules/a/node_modules/<name>`) is a different install
+// that the manifest does not name. An entry's `devDependencies` are not
+// installed for a consumer and are not an edge. Lockfile v1 has no `packages`
+// map and yields no edges, so it gives no inheritance -- deliberately, rather
+// than a second parser for a format npm stopped writing in 2020.
+export function npmLockEdges(lock) {
+  const edges = new Map();
+  const packages = lock && typeof lock === 'object' ? lock.packages : null;
+  if (!packages || typeof packages !== 'object') return edges;
+  const PREFIX = 'node_modules/';
+  for (const [key, entry] of Object.entries(packages)) {
+    if (!key.startsWith(PREFIX)) continue;
+    const name = key.slice(PREFIX.length);
+    if (name.includes('/node_modules/')) continue;
+    const children = new Set();
+    for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+      for (const child of Object.keys(entry?.[field] || {})) {
+        // An OPTIONAL peer (`peerDependenciesMeta.<x>.optional`) is not a
+        // requirement: the parent works with it or without it and npm installs
+        // none of them. laravel-echo lists pusher-js and socket.io-client this
+        // way -- picking one is OUR decision, which is what the allowlist gates.
+        if (field === 'peerDependencies' && entry?.peerDependenciesMeta?.[child]?.optional) continue;
+        children.add(child);
+      }
+    }
+    edges.set(name, children);
+  }
+  return edges;
+}
+
+// Python and Rust lockfiles are not read: a pyproject repo has no single
+// lockfile format (uv.lock, poetry.lock, pdm.lock, none), and those ecosystems
+// simply get no inheritance -- the normal check applies, which is the safe
+// direction to be incomplete in.
+export function readLockEdges(repoDir, ecosystem) {
+  if (ecosystem === 'composer') {
+    const lock = readJsonIfPresent(path.join(repoDir, 'composer.lock'));
+    return lock ? { lockfile: 'composer.lock', edges: composerLockEdges(lock) } : null;
+  }
+  if (ecosystem === 'npm') {
+    const lock = readJsonIfPresent(path.join(repoDir, 'package-lock.json'));
+    return lock ? { lockfile: 'package-lock.json', edges: npmLockEdges(lock) } : null;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Allowlist
 // ---------------------------------------------------------------------------
 
@@ -536,6 +617,88 @@ function parseDate(value) {
   return Number.isFinite(t) ? t : null;
 }
 
+// Findings a direct dependency can inherit its way out of. `bad-override` is
+// deliberately absent: it is a defect in OUR allowlist file, not a fact about
+// the package, and no parent can vouch for a malformed entry.
+const INHERITABLE = new Set(['unapproved', 'stale', 'lookup-failed', 'expired-override']);
+
+const failing = (f) => f.level === 'error' || f.level === 'warn';
+
+// Owner's ruling, 2026-10-31: "dependencies of our whitelisted dependencies
+// inherit their status from what we use". Applied to a package that is listed
+// DIRECTLY and is also required by an approved direct dependency -- the
+// motivating case is `nunomaduro/collision` in a Laravel app's require-dev,
+// which `pestphp/pest` itself requires.
+//
+// A direct dependency D whose own check failed inherits from parent P only if
+// ALL of these hold:
+//   - P is a direct dependency in the same manifest;
+//   - P is approved (author, package or grant -- not first-party: ours is not
+//     an approval decision, and its requirements are policed in its own repo);
+//   - P passed its OWN check with no failing finding. P passing only by
+//     inheritance does not count, which is what makes this ONE level: parents
+//     are judged on `own` findings computed before any inheritance ran;
+//   - the repo's LOCKFILE records P requiring D. No lockfile, or no recorded
+//     edge, means no inheritance. The edge is proven, never inferred.
+// Anything else D failed on that is not INHERITABLE keeps D failing.
+//
+// The pass is REPORTED, never silent: D's failing findings are replaced by one
+// `inherited` note that names the parent and keeps what was waived, and D's
+// record carries `inheritedFrom`.
+export function inheritFromApprovedParents(repoDir, perDep) {
+  const lockCache = new Map();
+  const lockFor = (ecosystem) => {
+    if (!lockCache.has(ecosystem)) lockCache.set(ecosystem, readLockEdges(repoDir, ecosystem));
+    return lockCache.get(ecosystem);
+  };
+
+  // Snapshot every dependency's standing BEFORE anything is rewritten, so a
+  // dependency that inherits cannot then act as a parent for another.
+  const passedOnOwn = new Map(perDep.map((d) => [d, !d.own.some(failing)]));
+
+  for (const d of perDep) {
+    const fails = d.own.filter(failing);
+    if (!fails.length) continue;
+    if (!fails.every((f) => INHERITABLE.has(f.kind))) continue;
+
+    const lock = lockFor(d.manifest.ecosystem);
+    if (!lock) continue;
+
+    const parents = [];
+    for (const p of perDep) {
+      if (p === d || p.manifest !== d.manifest) continue;
+      if (p.record.name === d.record.name) continue;
+      // `allowed` is implied by `passedOnOwn` today (an unapproved dependency
+      // always carries an `unapproved` finding); it is stated anyway so the
+      // rule survives a future change to how findings are recorded.
+      if (!p.verdict.allowed || p.verdict.firstParty) continue;
+      if (!passedOnOwn.get(p)) continue;
+      if (!lock.edges.get(p.record.name)?.has(d.record.name)) continue;
+      if (!parents.some((x) => x.record.name === p.record.name)) parents.push(p);
+    }
+    if (!parents.length) continue;
+
+    const parent = parents[0];
+    d.record.inheritedFrom = parent.record.name;
+    const waived = fails.map((f) => ({ kind: f.kind, level: f.level, message: f.message }));
+    d.own = d.own.filter((f) => !failing(f));
+    d.own.push({
+      level: 'note',
+      kind: 'inherited',
+      ...d.record,
+      parent: parent.record.name,
+      parentVia: parent.verdict.via,
+      parents: parents.map((p) => p.record.name),
+      lockfile: lock.lockfile,
+      waived,
+      message:
+        `${d.record.name} via ${parent.record.name} -- ${parent.record.name} is approved (${parent.verdict.via}) ` +
+        `and passes its own check, and ${lock.lockfile} records it requiring ${d.record.name}. ` +
+        `Waived: ${waived.map((w) => w.kind).join(', ')}.`,
+    });
+  }
+}
+
 export async function checkRepo(repoDir, allowlist, options = {}) {
   const {
     freshness = 'error',
@@ -561,6 +724,7 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
   const manifests = readManifests(repoDir);
   const findings = [];
   const checked = [];
+  const perDep = [];
 
   const repoIdentities = [
     path.basename(path.resolve(repoDir)),
@@ -582,9 +746,15 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
         via: verdict.via,
       };
       checked.push(record);
+      // This dependency's OWN findings. Collected per dependency rather than
+      // straight into `findings`, because inheritance (below) needs to know
+      // whether each direct dependency passed on its own before it can decide
+      // whether that dependency is an approved parent.
+      const own = [];
+      perDep.push({ manifest, record, verdict, own });
 
       if (!verdict.allowed) {
-        findings.push({
+        own.push({
           level: 'error',
           kind: 'unapproved',
           ...record,
@@ -593,7 +763,7 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
         continue;
       }
       if (verdict.entry?.review) {
-        findings.push({
+        own.push({
           level: 'note',
           kind: 'review',
           ...record,
@@ -608,7 +778,7 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
       if (override) {
         const expires = parseDate(override.expires);
         if (expires === null) {
-          findings.push({
+          own.push({
             level: 'error',
             kind: 'bad-override',
             ...record,
@@ -617,7 +787,7 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
           continue;
         }
         if (now > expires) {
-          findings.push({
+          own.push({
             level: freshnessLevel,
             kind: 'expired-override',
             ...record,
@@ -637,7 +807,7 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
         // does not run: the log goes green and the check did not happen.
         // `kit:dogfood` already treats a failed registry lookup as a failure;
         // this matches it deliberately.
-        findings.push({
+        own.push({
           level: freshnessLevel,
           kind: 'lookup-failed',
           ...record,
@@ -651,7 +821,7 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
       record.lastActivity = result.lastActivity.slice(0, 10);
       record.ageDays = ageDays;
       if (ageDays > freshnessDays) {
-        findings.push({
+        own.push({
           level: freshnessLevel,
           kind: 'stale',
           ...record,
@@ -660,6 +830,10 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
       }
     }
   }
+
+  inheritFromApprovedParents(repoDir, perDep);
+  for (const d of perDep) findings.push(...d.own);
+
 
   return {
     repoDir,
@@ -744,7 +918,9 @@ Checks DIRECT dependencies only -- npm dependencies/devDependencies/
 peerDependencies/optionalDependencies, Composer require/require-dev, Python
 [project] dependencies plus optional-dependencies and dependency-groups.
 Transitive dependencies inherit approval from their direct parent and are not
-enumerated.
+enumerated. A direct dependency that an approved, passing direct dependency
+also requires -- per composer.lock or package-lock.json, never the network --
+inherits that parent's status and is printed as INHERITED <name> via <parent>.
 
   --freshness error   a stale or unverifiable dependency fails the run (default)
   --freshness warn    report but exit 0 -- for local exploration, never CI
@@ -754,12 +930,17 @@ enumerated.
   --require-gate      with --sweep, also fail repos whose CI does not run this
 `;
 
-function render(result, { showAll = false } = {}) {
+export function renderResult(result, { showAll = false } = {}) {
   const lines = [];
   const order = { error: 0, warn: 1, note: 2 };
   const tags = { error: 'FAIL', warn: 'WARN', note: 'NOTE' };
   const sorted = [...result.findings].sort((a, b) => order[a.level] - order[b.level]);
-  for (const f of sorted) lines.push(`  ${tags[f.level]} [${f.kind}] ${f.message}`);
+  for (const f of sorted) {
+    // An inherited pass gets its own tag, so it can never be read as a plain
+    // "approved" -- the reader sees which parent it rode in on.
+    if (f.kind === 'inherited') lines.push(`  INHERITED ${f.message}`);
+    else lines.push(`  ${tags[f.level]} [${f.kind}] ${f.message}`);
+  }
   if (result.ramping && result.findings.some((f) => f.level === 'warn')) {
     lines.push(`  ---- freshness findings above are WARNINGS until ${result.freshnessEnforcedFrom}, then they fail the build.`);
   }
@@ -805,7 +986,7 @@ async function main() {
         if (!errs && !gateFail && !result.findings.length) {
           process.stdout.write(`${head} -- ok\n`);
         } else {
-          process.stdout.write(`${head}\n${render(result)}\n`);
+          process.stdout.write(`${head}\n${renderResult(result)}\n`);
           if (gateFail) {
             process.stdout.write(`  FAIL [no-gate] ${gate.missing.join(', ')} do not run the allowlist check. A gate no workflow runs is not a gate.\n`);
           }
@@ -857,7 +1038,7 @@ async function main() {
     // own small defect, of exactly the kind this tool exists to surface.
     const depErrs = result.findings.filter((f) => f.level === 'error' && f.kind !== 'no-manifest').length;
     process.stdout.write(`Third-party allowlist: ${result.checked.length} direct dependencies in ${path.resolve(opts.repo)}\n`);
-    const body = render(result, { showAll: true });
+    const body = renderResult(result, { showAll: true });
     if (body) process.stdout.write(body + '\n');
     if (depErrs) {
       process.stdout.write(
