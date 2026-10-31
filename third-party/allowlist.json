@@ -652,17 +652,6 @@
             "expires": "2026-12-13",
             "why": "A split package of an active monorepo, same finding as open-telemetry/context under prism-opentelemetry. Approved by the owner on 2026-09-13."
           }
-        },
-        "nunomaduro/collision": {
-          "reason": "Temporary owner-reviewed exception for the standard Laravel application dev-only console/test runner; scoped to this application, not a claim of recent upstream maintenance.",
-          "freshness": {
-            "mode": "dev-only-exception",
-            "evidence": "https://github.com/nunomaduro/collision/commit/9716022d2d48a14fa72bcc40239259051b27a1aa (2026-08-04); stable v8.9.5 2026-07-15, https://packagist.org/packages/nunomaduro/collision; zero known package advisories at verification.",
-            "verifiedOn": "2026-10-30",
-            "expires": "2027-01-04",
-            "why": "PROPOSED; owner ruling pending. Both named applications require v8.9.5 only in require-dev. CollisionServiceProvider registers php artisan test, so removal breaks the standard runner. No qualifying maintainer activity since August 4; Dependabot branch pushes and outsider comments are not substituted for it. Decide by November 3; re-check on expiry and retire this exception when an upstream release restores freshness."
-          },
-          "review": "Owner approval required before merge. This is an explicit dated dev-only risk acceptance, not a git-activity override; no runtime use or extension transfers automatically."
         }
       },
       "npm": {
@@ -689,17 +678,6 @@
         },
         "tempest/highlight": {
           "reason": "Server-side code highlighting for the documentation pages."
-        },
-        "nunomaduro/collision": {
-          "reason": "Temporary owner-reviewed exception for the standard Laravel application dev-only console/test runner; scoped to this application, not a claim of recent upstream maintenance.",
-          "freshness": {
-            "mode": "dev-only-exception",
-            "evidence": "https://github.com/nunomaduro/collision/commit/9716022d2d48a14fa72bcc40239259051b27a1aa (2026-08-04); stable v8.9.5 2026-07-15, https://packagist.org/packages/nunomaduro/collision; zero known package advisories at verification.",
-            "verifiedOn": "2026-10-30",
-            "expires": "2027-01-04",
-            "why": "PROPOSED; owner ruling pending. Both named applications require v8.9.5 only in require-dev. CollisionServiceProvider registers php artisan test, so removal breaks the standard runner. No qualifying maintainer activity since August 4; Dependabot branch pushes and outsider comments are not substituted for it. Decide by November 3; re-check on expiry and retire this exception when an upstream release restores freshness."
-          },
-          "review": "Owner approval required before merge. This is an explicit dated dev-only risk acceptance, not a git-activity override; no runtime use or extension transfers automatically."
         }
       },
       "npm": {
