@@ -753,6 +753,8 @@ test('MUST FIRE: package-lock peer and optional dependencies are edges too', asy
           peerDependencies: { tinyspy: '^4.0.3' },
           optionalDependencies: { loupe: '^3.0.0' },
         },
+        'node_modules/tinyspy': { version: '4.0.3' },
+        'node_modules/loupe': { version: '3.0.0' },
       },
     },
   });
@@ -859,16 +861,14 @@ test('MUST NOT FIRE: a package-lock entry\'s OWN devDependencies are not an edge
   assert.deepEqual(errorsFor(result, 'tinyspy').map((f) => f.kind), ['unapproved']);
 });
 
-test('MUST NOT FIRE: one level only -- a chain is not followed', async () => {
+test('MUST FIRE: a chain keeps the original explicit root approval', async () => {
   // pest (approved) -> collision (inherits from pest) -> acme/grandchild.
   // acme/grandchild is listed directly, and its only requirer is collision,
-  // which passes ONLY by inheritance. That is not an approved parent.
+  // which passes ONLY by inheritance. The explicit root is still pest, and
+  // every production edge is recorded: the 2026-11-01 any-depth ruling.
   //
-  // collision IS on the allowlist here, and fails only freshness. That matters:
-  // with collision unapproved, the "parent must be approved" rule would block
-  // the chain by itself and this test would prove nothing about chains. (It did
-  // exactly that on its first draft -- caught by sabotaging the one-level rule
-  // and watching this stay green.)
+  // Collision is explicitly approved but stale. Its inherited result must not
+  // replace pest's original passing approval as the root of the reported path.
   const allowlist = structuredClone(INHERIT_ALLOWLIST);
   allowlist.ecosystems.composer.packages['nunomaduro/collision'] = { reason: 'CLI error reporting.' };
   const lock = composerLock();
@@ -885,8 +885,11 @@ test('MUST NOT FIRE: one level only -- a chain is not followed', async () => {
   const first = inheritedFor(result, 'nunomaduro/collision');
   assert.equal(first.length, 1, 'the first link holds');
   assert.deepEqual(first[0].waived.map((w) => w.kind), ['stale'], 'collision is approved but fails on its own');
-  assert.deepEqual(errorsFor(result, 'acme/grandchild').map((f) => f.kind), ['unapproved'], 'the second does not');
-  assert.deepEqual(inheritedFor(result, 'acme/grandchild'), []);
+  assert.deepEqual(errorsFor(result, 'acme/grandchild'), []);
+  const grandchild = inheritedFor(result, 'acme/grandchild');
+  assert.equal(grandchild.length, 1);
+  assert.equal(grandchild[0].parent, 'pestphp/pest', 'an inherited intermediate never becomes the root');
+  assert.deepEqual(grandchild[0].path, ['pestphp/pest', 'nunomaduro/collision', 'acme/grandchild']);
 });
 
 test('an inherited package is still REPORTED, in the text and the JSON record', async () => {
@@ -919,6 +922,7 @@ test('lockfile edge readers: composer.lock and package-lock.json', () => {
     lockfileVersion: 3,
     packages: {
       'node_modules/vitest': { dependencies: { tinyspy: '1' } },
+      'node_modules/tinyspy': { version: '1' },
       // A nested copy is not the direct dependency the manifest names.
       'node_modules/other/node_modules/vitest': { dependencies: { loupe: '1' } },
     },
