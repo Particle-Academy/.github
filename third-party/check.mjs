@@ -8,8 +8,9 @@
 //
 // Transitive dependencies inherit approval from their allowlisted direct parent
 // and are NOT enumerated. A package that is listed directly AND is required by
-// an approved direct dependency (proven from the repo's lockfile) inherits that
-// parent's status too, one level only, and is reported as INHERITED -- see
+// an explicitly approved, passing direct dependency (proven from the repo's
+// recorded lock graph, at any depth) inherits that root's status and is reported
+// with its full shortest path as INHERITED -- see
 // `inheritFromApprovedParents`. See third-party/README.md for what that does
 // and does not protect against.
 //
@@ -319,24 +320,31 @@ export function composerLockEdges(lock) {
   return edges;
 }
 
-// package-lock.json v2/v3: `packages["node_modules/<name>"]`, its
-// `dependencies`, `peerDependencies` (minus OPTIONAL peers) and
-// `optionalDependencies`. Only the
-// TOP-LEVEL install path counts: a direct dependency is installed there, and a
-// nested copy (`node_modules/a/node_modules/<name>`) is a different install
-// that the manifest does not name. An entry's `devDependencies` are not
-// installed for a consumer and are not an edge. Lockfile v1 has no `packages`
-// map and yields no edges, so it gives no inheritance -- deliberately, rather
-// than a second parser for a format npm stopped writing in 2020.
+// package-lock v2/v3 records installed instances, not just package names.
+// Resolve each production requirement at its nearest installed location. A
+// nested copy must never vouch for a same-named top-level direct dependency.
+// Top-level node IDs remain package names; nested IDs retain their lock paths.
+// Optional peers and a dependency's own devDependencies remain excluded.
 export function npmLockEdges(lock) {
   const edges = new Map();
   const packages = lock && typeof lock === 'object' ? lock.packages : null;
   if (!packages || typeof packages !== 'object') return edges;
   const PREFIX = 'node_modules/';
+  const idFor = (key) => key.slice(PREFIX.length).includes('/node_modules/') ? key : key.slice(PREFIX.length);
+  const installed = (key) => Object.hasOwn(packages, key) && packages[key] && typeof packages[key] === 'object' && !packages[key].link;
+  const resolve = (from, name) => {
+    if (!/^(?:@[^/.][^/]*\/)?[^/.][^/]*$/.test(name)) return null;
+    let location = from;
+    for (;;) {
+      const key = `${location ? `${location}/` : ''}${PREFIX}${name}`;
+      if (installed(key)) return idFor(key);
+      if (!location) return null;
+      const parent = location.lastIndexOf('/node_modules/');
+      location = parent < 0 ? '' : location.slice(0, parent);
+    }
+  };
   for (const [key, entry] of Object.entries(packages)) {
-    if (!key.startsWith(PREFIX)) continue;
-    const name = key.slice(PREFIX.length);
-    if (name.includes('/node_modules/')) continue;
+    if (!key.startsWith(PREFIX) || !installed(key)) continue;
     const children = new Set();
     for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
       for (const child of Object.keys(entry?.[field] || {})) {
@@ -345,10 +353,11 @@ export function npmLockEdges(lock) {
         // none of them. laravel-echo lists pusher-js and socket.io-client this
         // way -- picking one is OUR decision, which is what the allowlist gates.
         if (field === 'peerDependencies' && entry?.peerDependenciesMeta?.[child]?.optional) continue;
-        children.add(child);
+        const target = resolve(key, child);
+        if (target !== null) children.add(target);
       }
     }
-    edges.set(name, children);
+    edges.set(idFor(key), children);
   }
   return edges;
 }
@@ -624,27 +633,36 @@ const INHERITABLE = new Set(['unapproved', 'stale', 'lookup-failed', 'expired-ov
 
 const failing = (f) => f.level === 'error' || f.level === 'warn';
 
-// Owner's ruling, 2026-10-31: "dependencies of our whitelisted dependencies
-// inherit their status from what we use". Applied to a package that is listed
-// DIRECTLY and is also required by an approved direct dependency -- the
-// motivating case is `nunomaduro/collision` in a Laravel app's require-dev,
-// which `pestphp/pest` itself requires.
-//
-// A direct dependency D whose own check failed inherits from parent P only if
-// ALL of these hold:
-//   - P is a direct dependency in the same manifest;
-//   - P is approved (author, package or grant -- not first-party: ours is not
-//     an approval decision, and its requirements are policed in its own repo);
-//   - P passed its OWN check with no failing finding. P passing only by
-//     inheritance does not count, which is what makes this ONE level: parents
-//     are judged on `own` findings computed before any inheritance ran;
-//   - the repo's LOCKFILE records P requiring D. No lockfile, or no recorded
-//     edge, means no inheritance. The edge is proven, never inferred.
-// Anything else D failed on that is not INHERITABLE keeps D failing.
-//
-// The pass is REPORTED, never silent: D's failing findings are replaced by one
-// `inherited` note that names the parent and keeps what was waived, and D's
-// record carries `inheritedFrom`.
+export const MAX_INHERITANCE_DEPTH = 128;
+
+// Breadth-first, sorted traversal chooses the shortest path deterministically.
+// A visited set bounds cycles; paths beyond the fixed cap cannot approve
+// anything. The overflow flag makes an otherwise-unresolved refusal visible.
+export function shortestLockPaths(edges, root) {
+  const paths = new Map([[root, [root]]]);
+  const visited = new Set([root]);
+  const queue = [root];
+  let overflow = false;
+  for (let index = 0; index < queue.length; index++) {
+    const node = queue[index], current = paths.get(node);
+    for (const child of [...(edges.get(node) || [])].sort()) {
+      if (visited.has(child)) continue;
+      if (current.length - 1 >= MAX_INHERITANCE_DEPTH) {
+        overflow = true;
+        continue;
+      }
+      visited.add(child);
+      paths.set(child, [...current, child]);
+      queue.push(child);
+    }
+  }
+  return { paths, overflow };
+}
+
+// Owner's 2026-11-01 ruling extends rule B to any recorded depth. Approval
+// always comes from an explicitly approved DIRECT root that passed on its
+// own, never from an inherited result. Intermediates need no separate grant.
+// Only existing INHERITABLE failures may be waived; all others stay failures.
 export function inheritFromApprovedParents(repoDir, perDep) {
   const lockCache = new Map();
   const lockFor = (ecosystem) => {
@@ -652,9 +670,9 @@ export function inheritFromApprovedParents(repoDir, perDep) {
     return lockCache.get(ecosystem);
   };
 
-  // Snapshot every dependency's standing BEFORE anything is rewritten, so a
-  // dependency that inherits cannot then act as a parent for another.
+  // Snapshot standing BEFORE rewriting. Inherited results never become roots.
   const passedOnOwn = new Map(perDep.map((d) => [d, !d.own.some(failing)]));
+  const searches = new Map();
 
   for (const d of perDep) {
     const fails = d.own.filter(failing);
@@ -664,22 +682,38 @@ export function inheritFromApprovedParents(repoDir, perDep) {
     const lock = lockFor(d.manifest.ecosystem);
     if (!lock) continue;
 
-    const parents = [];
+    const candidates = [];
+    let overflow = false;
     for (const p of perDep) {
       if (p === d || p.manifest !== d.manifest) continue;
       if (p.record.name === d.record.name) continue;
       // `allowed` is implied by `passedOnOwn` today (an unapproved dependency
       // always carries an `unapproved` finding); it is stated anyway so the
       // rule survives a future change to how findings are recorded.
-      if (!p.verdict.allowed || p.verdict.firstParty) continue;
+      if (!p.verdict.allowed || p.verdict.firstParty || !['author', 'package', 'grant'].includes(p.verdict.via)) continue;
       if (!passedOnOwn.get(p)) continue;
-      if (!lock.edges.get(p.record.name)?.has(d.record.name)) continue;
-      if (!parents.some((x) => x.record.name === p.record.name)) parents.push(p);
+      if (!searches.has(p)) searches.set(p, shortestLockPaths(lock.edges, p.record.name));
+      const search = searches.get(p);
+      overflow ||= search.overflow;
+      const route = search.paths.get(d.record.name);
+      if (!route || route.length < 2) continue;
+      if (!candidates.some((x) => x.parent.record.name === p.record.name)) candidates.push({ parent: p, route });
     }
-    if (!parents.length) continue;
+    if (!candidates.length) {
+      if (overflow) d.own.push({ level: 'note', kind: 'inheritance-depth-limit', ...d.record,
+        message: `${d.record.name}: no approved lockfile path found within ${MAX_INHERITANCE_DEPTH} edges; normal checks still apply.` });
+      continue;
+    }
+    candidates.sort((a, b) => a.route.length - b.route.length || (a.route.join('\0') < b.route.join('\0') ? -1 : a.route.join('\0') > b.route.join('\0') ? 1 : 0));
 
-    const parent = parents[0];
+    const { parent, route } = candidates[0];
+    const rootGrant = { via: parent.verdict.via,
+      name: parent.verdict.via === 'author' ? parent.verdict.owner : parent.record.name,
+      ...(parent.verdict.grantedTo ? { grantedTo: parent.verdict.grantedTo } : {}) };
+    const grantLabel = `${rootGrant.via} ${rootGrant.name}${rootGrant.grantedTo ? ` for ${rootGrant.grantedTo}` : ''}`;
+    const displayPath = route.map((node) => node.includes('/node_modules/') ? node.slice(node.lastIndexOf('/node_modules/') + 14) : node);
     d.record.inheritedFrom = parent.record.name;
+    d.record.inheritedPath = displayPath;
     const waived = fails.map((f) => ({ kind: f.kind, level: f.level, message: f.message }));
     d.own = d.own.filter((f) => !failing(f));
     d.own.push({
@@ -688,12 +722,15 @@ export function inheritFromApprovedParents(repoDir, perDep) {
       ...d.record,
       parent: parent.record.name,
       parentVia: parent.verdict.via,
-      parents: parents.map((p) => p.record.name),
+      parents: candidates.map((p) => p.parent.record.name),
+      path: displayPath,
+      lockPath: route,
+      rootGrant,
       lockfile: lock.lockfile,
       waived,
       message:
-        `${d.record.name} via ${parent.record.name} -- ${parent.record.name} is approved (${parent.verdict.via}) ` +
-        `and passes its own check, and ${lock.lockfile} records it requiring ${d.record.name}. ` +
+        `${d.record.name} via ${displayPath.join(' → ')} -- root approval: ${grantLabel}; ` +
+        `the root passes its own check and every edge is recorded in ${lock.lockfile}. ` +
         `Waived: ${waived.map((w) => w.kind).join(', ')}.`,
     });
   }
@@ -920,7 +957,9 @@ peerDependencies/optionalDependencies, Composer require/require-dev, Python
 Transitive dependencies inherit approval from their direct parent and are not
 enumerated. A direct dependency that an approved, passing direct dependency
 also requires -- per composer.lock or package-lock.json, never the network --
-inherits that parent's status and is printed as INHERITED <name> via <parent>.
+inherits the explicit root's status at any recorded depth. INHERITED reports
+the shortest full path and names that root's approval. Cycles are visited once;
+paths beyond 128 edges fail closed. Freshness and expiry rules stay unchanged.
 
   --freshness error   a stale or unverifiable dependency fails the run (default)
   --freshness warn    report but exit 0 -- for local exploration, never CI
