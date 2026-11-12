@@ -400,6 +400,18 @@
         }
       }
     },
+    "fancy-service-token": {
+      "pypi": {
+        "starlette": {
+          "reason": "The framework this middleware exists to integrate with, as a TEST dependency only (dependency-groups.test) -- [project] dependencies is empty and a CI job runs the framework-free suites with it absent. Covered by the envelope's standing carve-out of 2026-10-06 (RULES.md, rule 1): 'the framework a package exists to integrate with, as a TEST dependency ... No approval needed.' This entry does not grant an approval; it makes that ruling effective in the gate, scoped to this package only, the same shape as the fancy-inertia-server grant.",
+          "why": "The package's central claim is that a refused request never reaches the handler and its body is never read. Without Starlette that is proven only against a hand-written ASGI driver, never against the route machinery a real sidecar runs."
+        },
+        "fastapi": {
+          "reason": "The other framework this middleware exists to integrate with, as a TEST dependency only, under the same carve-out and with the same scope. Never a runtime dependency. Freshness: 0.162.5 released 2026-11-11.",
+          "why": "FastAPI reads and validates a request body BEFORE it resolves dependencies, which is why verification must live in middleware. The test that proves a FastAPI body model is never parsed on a refused request needs FastAPI itself; pydantic arrives transitively under it."
+        }
+      }
+    },
     "@particle-academy/fancy-git-github": {
       "npm": {
         "octokit": {
