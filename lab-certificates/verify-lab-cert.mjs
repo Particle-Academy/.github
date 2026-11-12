@@ -74,44 +74,58 @@ function loadKey(file) {
   return crypto.createPublicKey({ key: { kty: 'OKP', crv: 'Ed25519', x: raw.toString('base64url') }, format: 'jwk' });
 }
 
-async function load(source, pkg, version) {
+// The file's text, or null when it is ABSENT (HTTP 404, ENOENT). Every other
+// outcome -- a network error, a timeout, any other status, an unreadable file --
+// refuses here, so a caller can never mistake "could not look" for "not there".
+async function load(source, pkg, name) {
   if (/^https?:\/\//i.test(source)) {
-    const url = `${source.replace(/\/+$/, '')}/${pkg}/${version}.json`;
+    const url = `${source.replace(/\/+$/, '')}/${pkg}/${name}`;
     let res;
     try {
-      res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'follow' });
+      res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs()), redirect: 'follow' });
     } catch (error) {
       refuse(`could not fetch ${url} (${error?.cause?.code ?? error?.name ?? 'error'}: ${error?.cause?.message ?? error?.message}). A failed lookup is NOT a pass.`);
     }
-    if (res.status === 404) refuse(`no certificate for ${pkg} ${version}: ${url} is 404. Run the lab suite on this commit and \`php artisan lab:certify\` it.`);
+    if (res.status === 404) return { text: null, where: url, absent: `${url} is 404` };
     if (!res.ok) refuse(`could not fetch ${url}: HTTP ${res.status}. A failed lookup is NOT a pass.`);
-    return { text: await res.text(), where: url };
+    let text;
+    try {
+      text = await res.text();
+    } catch (error) {
+      refuse(`could not read the body of ${url} (${error?.name ?? 'error'}: ${error?.message}). A failed lookup is NOT a pass.`);
+    }
+    return { text, where: url };
   }
 
-  const file = path.join(source, pkg, `${version}.json`);
+  const file = path.join(source, pkg, name);
   try {
     return { text: fs.readFileSync(file, 'utf8'), where: file };
   } catch (error) {
-    if (error.code === 'ENOENT') refuse(`no certificate for ${pkg} ${version}: ${file} does not exist. Run the lab suite on this commit and \`php artisan lab:certify\` it.`);
+    if (error.code === 'ENOENT') return { text: null, where: file, absent: `${file} does not exist` };
     refuse(`could not read ${file} (${error.code}). A failed lookup is NOT a pass.`);
   }
   return null;
 }
 
-export async function verify({ pkg, version, commit, source, publicKey = DEFAULT_KEY }) {
-  const key = loadKey(publicKey);
-  const { text, where } = await load(source, pkg, version);
+// Tests shorten it to prove a timeout refuses. It can only make the gate
+// refuse sooner or wait longer; no value makes a lookup pass.
+function timeoutMs() {
+  const n = Number(process.env.VERIFY_LAB_CERT_TIMEOUT_MS);
+  return Number.isInteger(n) && n > 0 ? n : TIMEOUT_MS;
+}
 
-  let cert;
+// Parse, then verify the detached signature against the pinned key. Until the
+// signature verifies, nothing else in the file is evidence.
+function signedRecord(text, where, key, what) {
+  let record;
   try {
-    cert = JSON.parse(text);
+    record = JSON.parse(text);
   } catch {
-    refuse(`${where} is not JSON, so it is not a certificate.`);
+    refuse(`${where} is not JSON, so it is not ${what}.`);
   }
-  if (cert === null || typeof cert !== 'object' || Array.isArray(cert)) refuse(`${where} is not a certificate object.`);
+  if (record === null || typeof record !== 'object' || Array.isArray(record)) refuse(`${where} is not ${what} object.`);
 
-  // The signature first: until it verifies, nothing else in the file is evidence.
-  const { signature, ...signed } = cert;
+  const { signature, ...signed } = record;
   const sig = typeof signature === 'string' ? Buffer.from(signature, 'base64') : Buffer.alloc(0);
   if (sig.length !== 64) refuse(`${where} has no valid Ed25519 signature field.`);
 
@@ -122,9 +136,42 @@ export async function verify({ pkg, version, commit, source, publicKey = DEFAULT
     refuse(`${where} cannot be canonicalised (${error.message}).`);
   }
   if (!crypto.verify(null, body, key, sig)) {
-    refuse(`the signature on ${where} does not verify against the pinned lab key. The certificate was altered, or was not signed by the lab.`);
+    refuse(`the signature on ${where} does not verify against the pinned lab key. It was altered, or was not signed by the lab.`);
+  }
+  return signed;
+}
+
+// `<package>/exempt.json`, written by `lab:exempt`: a supporting package that is
+// not part of the kit releases without a certificate. Consulted ONLY when the
+// certificate is absent -- a certificate that is present is judged on its own,
+// so an exemption can never paper over a forged or wrong-commit certificate.
+function verifyExemption(text, where, key, pkg) {
+  const signed = signedRecord(text, where, key, 'an exemption');
+  if (signed.kind !== 'exemption') refuse(`${where} is not an exemption (kind=${JSON.stringify(signed.kind)}).`);
+  if (signed.v !== 1) refuse(`unsupported exemption version v=${JSON.stringify(signed.v)}.`);
+  if (signed.package !== pkg) refuse(`the exemption is for package ${JSON.stringify(signed.package)}, not ${pkg}.`);
+  if (signed.revoked === true) refuse(`the exemption for ${pkg} was revoked (${JSON.stringify(signed.reason)}, ${signed.issued_at}). It needs a lab certificate.`);
+  if (signed.revoked !== false) refuse(`the exemption for ${pkg} does not say it is unrevoked (revoked=${JSON.stringify(signed.revoked)}), so it does not count.`);
+  if (typeof signed.reason !== 'string' || signed.reason.trim() === '') refuse(`the exemption for ${pkg} carries no reason, so it does not count.`);
+  if (typeof signed.issued_at !== 'string') refuse(`the exemption for ${pkg} has no issued_at.`);
+  return signed;
+}
+
+export async function verify({ pkg, version, commit, source, publicKey = DEFAULT_KEY }) {
+  const key = loadKey(publicKey);
+  const { text, where, absent } = await load(source, pkg, `${version}.json`);
+
+  if (text === null) {
+    const ex = await load(source, pkg, 'exempt.json');
+    if (ex.text === null) {
+      refuse(`no certificate for ${pkg} ${version}: ${absent}, and no exemption (${ex.absent}). Run the lab suite on this commit and \`php artisan lab:certify\` it.`);
+    }
+    return verifyExemption(ex.text, ex.where, key, pkg);
   }
 
+  const signed = signedRecord(text, where, key, 'a certificate');
+
+  if (signed.kind !== undefined) refuse(`${where} is not a certificate (kind=${JSON.stringify(signed.kind)}).`);
   if (signed.v !== 1) refuse(`unsupported certificate version v=${JSON.stringify(signed.v)}.`);
   if (signed.package !== pkg) refuse(`the certificate is for package ${JSON.stringify(signed.package)}, not ${pkg}.`);
   if (signed.version !== version) refuse(`the certificate is for version ${JSON.stringify(signed.version)}, not ${version}.`);
@@ -160,6 +207,10 @@ async function main() {
 
   try {
     const cert = await verify({ pkg: a.package, version: a.version, commit: a.commit, source: a.source, publicKey: a['public-key'] ?? DEFAULT_KEY });
+    if (cert.kind === 'exemption') {
+      console.log(`verify-lab-cert: EXEMPT -- ${cert.package}: ${cert.reason} (issued ${cert.issued_at}, lab ${cert.lab_commit}). No lab certificate for ${a.version}; the lab exempts this package.`);
+      return;
+    }
     console.log(`verify-lab-cert: OK -- ${cert.package} ${cert.version} at ${cert.commit}: ${cert.tests.length} lab test(s) passed, ${cert.paid_runs} paid run(s), lab ${cert.lab_commit}, issued ${cert.issued_at}.`);
   } catch (error) {
     const reason = error instanceof Refusal ? error.message : `verifier error: ${error?.stack ?? error}`;
