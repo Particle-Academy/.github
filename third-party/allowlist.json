@@ -400,6 +400,18 @@
         }
       }
     },
+    "fancy-http-guard": {
+      "pypi": {
+        "starlette": {
+          "reason": "The framework this ASGI guard exists to integrate with (CC-fancy-0031: 'a Python middleware (FastAPI and Starlette)'), as a TEST dependency only -- [project] dependencies stays empty and a no-dependencies CI job runs the suite without it. The envelope's standing carve-out of 2026-10-06 (RULES.md, rule 1) covers it; this entry is the gate expressing that ruling, scoped to this one package.",
+          "why": "install() registers Starlette exception handlers and returns Starlette Responses; without Starlette the suite exercises only the raw-ASGI branch, which no Starlette or FastAPI consumer reaches."
+        },
+        "fastapi": {
+          "reason": "The framework this ASGI guard exists to integrate with (CC-fancy-0031 names FastAPI), as a TEST dependency only. Same carve-out, same scope: this package, never a runtime dependency.",
+          "why": "The guard is middleware BECAUSE FastAPI reads the body before resolving dependencies, and Python's json.loads accepts NaN. Only a real FastAPI app proves the guard runs before that parse (tests/test_hostile.py: fastapi_alone_takes_nan vs with_the_guard_nan_never_reaches_pydantic) and that RequestValidationError becomes the envelope."
+        }
+      }
+    },
     "@particle-academy/fancy-git-github": {
       "npm": {
         "octokit": {
