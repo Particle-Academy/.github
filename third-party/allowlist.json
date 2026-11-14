@@ -155,7 +155,14 @@
           "reason": "Laravel broadcasting client; the transport behind fancy-query's live invalidation."
         },
         "pusher-js": {
-          "reason": "The websocket client Laravel Echo drives, including against Reverb."
+          "reason": "The websocket client Laravel Echo drives, including against Reverb.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/pusher/pusher-js -- last commit 2026-10-30, pushed 2026-11-02",
+            "verifiedOn": "2026-11-14",
+            "expires": "2027-02-14",
+            "why": "Last npm publish was 8.6.0 on 2026-07-23 (114 days on 2026-11-14), but the repository is committed to: dependency and test-tooling bumps merged 2026-10-30. A release or a commit meets the bar."
+          }
         }
       }
     },
@@ -345,6 +352,13 @@
             "expires": "2026-11-19",
             "why": "Last npm publish for the browser package was 2026-03-10; the monorepo it lives in is actively committed to and its server sibling published 2026-06-24."
           }
+        }
+      }
+    },
+    "@particle-academy/fancy-sockets": {
+      "npm": {
+        "ws": {
+          "reason": "Owner approved (CC-fancy-0041; ForceTheQuestion q_b35003b1, answer msg_43707c74, recorded in the envelope's .ai/knowledge/third-party-allowlist.md): RFC 6455 framing under our Pusher-protocol server. MIT, 0 dependencies. Everything protocol-level (messages, HMAC auth, API signatures, presence, limits) is ours."
         }
       }
     },
