@@ -348,6 +348,13 @@
         }
       }
     },
+    "@particle-academy/react-fancy": {
+      "npm": {
+        "hls.js": {
+          "reason": "Owner approved 2026-11-14 (ForceTheQuestion q_8d88f092, answer msg_a4efb13b): HLS playback for ChannelPlayer in browsers without native HLS. An OPTIONAL peer used only by the opt-in ./channels/hls subpath, and a devDependency for its tests; never a react-fancy dependency and never in the main bundle."
+        }
+      }
+    },
     "particle-academy/fancy-passkeys": {
       "composer": {
         "web-auth/webauthn-lib": {
