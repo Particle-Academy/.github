@@ -355,13 +355,6 @@
         }
       }
     },
-    "@particle-academy/fancy-sockets": {
-      "npm": {
-        "ws": {
-          "reason": "Owner approved (CC-fancy-0041; ForceTheQuestion q_b35003b1, answer msg_43707c74, recorded in the envelope's .ai/knowledge/third-party-allowlist.md): RFC 6455 framing under our Pusher-protocol server. MIT, 0 dependencies. Everything protocol-level (messages, HMAC auth, API signatures, presence, limits) is ours."
-        }
-      }
-    },
     "particle-academy/fancy-passkeys": {
       "composer": {
         "web-auth/webauthn-lib": {
