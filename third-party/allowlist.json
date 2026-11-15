@@ -94,12 +94,12 @@
           "reason": "The build tool for most TypeScript packages in the suite.",
           "freshness": {
             "mode": "git",
-            "evidence": "https://github.com/egoist/tsup -- pushed 2026-07-20",
-            "verifiedOn": "2026-08-19",
-            "expires": "2026-11-19",
-            "why": "Last npm publish was 2025-11-12, but the repository is committed to. Development attention has shifted toward tsdown (which fancy-tui already builds with); if the next re-verification finds no commits, the answer is migrating rather than renewing."
+            "evidence": "https://github.com/egoist/tsup -- last commit on the default branch 2026-10-14 (release v9.0.0), pushed 2026-11-15",
+            "verifiedOn": "2026-11-15",
+            "expires": "2027-02-19",
+            "why": "Renewed 2026-11-15 on owner approval (ForceTheQuestion q_922b2bf0, answer msg_6778b6b3). tsup 9.0.0 was published to npm on 2026-10-14, so it passes the release bar on its own until 2027-01-14; this override carries it to 2027-02-19. Development attention has shifted toward tsdown (which fancy-tui already builds with); if the next re-verification finds no commits, the answer is migrating rather than renewing."
           },
-          "review": "Last RELEASE was 2025-11-12 (280 days). Alive on commits only. Decide whether the suite migrates to tsdown before this override expires 2026-11-19."
+          "review": "Last RELEASE was 9.0.0 on 2026-10-14 (32 days at renewal). Decide whether the suite migrates to tsdown before this override expires 2027-02-19."
         },
         "tsdown": {
           "reason": "Rolldown-based bundler; fancy-tui's build tool and the likely successor to tsup across the suite."
