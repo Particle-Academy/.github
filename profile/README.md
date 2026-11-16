@@ -12,7 +12,7 @@ today, and gearing up for a physical entrepreneurship center.**
 This GitHub org is where our **open-source engineering** lives — the tools we build
 and teach with.
 
-## 🧩 Fancy UI
+## 🧩 Fancy Dev Kit — for SaaSy Agents
 
 A constellation of small, independent UI packages for **Human+ UX**: applications
 where humans and agents share the same UI surface and trade control fluidly through
