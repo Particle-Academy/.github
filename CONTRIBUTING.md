@@ -34,7 +34,7 @@ You don't have to write code to move the suite forward:
   badge to your README:
 
   ```md
-  [![Powered by Fancy UI](https://img.shields.io/badge/Powered%20by-Fancy%20UI-6d28d9)](https://github.com/Particle-Academy)
+  [![Powered by Fancy](https://img.shields.io/badge/Powered%20by-Fancy-6d28d9)](https://github.com/Particle-Academy)
   ```
 
 ---
