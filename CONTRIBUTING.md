@@ -30,7 +30,7 @@ You don't have to write code to move the suite forward:
 - **Register your project** — built something with Fancy Dev Kit? Tell us. We
   showcase community projects, and registering yours is the first step toward
   the badge below.
-- **Wear the badge** — shipping with Fancy Dev Kit? Add the **Powered by Fancy UI**
+- **Wear the badge** — shipping with Fancy Dev Kit? Add the **Powered by Fancy**
   badge to your README:
 
   ```md

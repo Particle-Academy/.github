@@ -18,7 +18,7 @@ A constellation of small, independent UI packages for **Human+ UX**: application
 where humans and agents share the same UI surface and trade control fluidly through
 MCP tool bridges, never DOM scraping.
 
-- **64 packages, 245 installable components** — 47 TypeScript, 16 PHP, 1 polyglot.
+- **141 packages, 387 installable components** — 79 TypeScript, 41 PHP, 16 Python, 5 polyglot.
   ~70 React primitives in `react-fancy`, plus specialized editors (sheets, slides,
   flow, code, whiteboard, diff, terminal, map, 3D) and headless server capabilities
 - **Most server capabilities ship as a matched PHP + Node pair**, so the same
@@ -27,7 +27,7 @@ MCP tool bridges, never DOM scraping.
   participants rather than external scripts
 - Laravel / PHP packages for catalog, feature management, gamification, and agentic
   document generation
-- **Fancy Pixel** + **Fancy Heuristics** for "Powered by Fancy UI" verification
+- **Fancy Pixel** + **Fancy Heuristics** for "Powered by Fancy" badge verification
   badges and human-and-agent behavioural analytics
 
 Each package is its own public repo, published to npm (`@particle-academy/*`) and
