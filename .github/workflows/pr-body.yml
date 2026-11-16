@@ -1,0 +1,20 @@
+name: PR body
+
+# This repository's own PRs (allowlist grants and renewals included) are held
+# to the PR body rule like every other repo's. See pr-body-check.yml.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-body:
+    uses: ./.github/workflows/pr-body-check.yml
+    with:
+      # Take the checker from the PR's own head, so a PR that changes the
+      # checker is checked by the version it proposes -- and the PR that
+      # introduces it can be checked at all. The code-owner review on this repo
+      # is what stands behind a change to the checker, as it is for check.mjs.
+      checker-ref: ${{ github.event.pull_request.head.sha }}

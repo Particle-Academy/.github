@@ -1,0 +1,73 @@
+name: PR body check
+
+# Reusable workflow. Owner rule, 2026-11-15: every pull request description has
+# three sections, in order -- "## Why", "## What changes", "## Who authorized it"
+# -- and the last one cites a ForceTheQuestion id (q_...), a council id
+# (CC-fancy-NNNN), a G-NNN id or the word "owner", with a date (YYYY-MM-DD).
+# The rule lives in pr-body/check.mjs; its tests are pr-body/check.test.mjs.
+#
+# Call it from a repo like this. `edited` matters: without it, fixing the
+# description does not re-run the check.
+#
+#   on:
+#     pull_request:
+#       types: [opened, edited, reopened, synchronize]
+#   permissions:
+#     contents: read
+#   jobs:
+#     pr-body:
+#       uses: Particle-Academy/.github/.github/workflows/pr-body-check.yml@main
+#
+# The PR body is untrusted data. It reaches the checker ONLY as an environment
+# variable, never interpolated into a `run:` script, and the checker never
+# echoes it back. Only this repository's checker is checked out -- none of the
+# calling PR's code is fetched or run -- so it is also safe under
+# pull_request_target.
+
+on:
+  workflow_call:
+    inputs:
+      checker-ref:
+        description: Ref of Particle-Academy/.github to take pr-body/check.mjs from.
+        type: string
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  pr-body:
+    name: PR body has Why / What changes / Who authorized it
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Without this, a call from a non-PR event would see an empty body and
+      # fail with "the PR body is empty", sending someone to edit a PR that does
+      # not exist. Name the real cause instead.
+      - name: Require a pull_request event
+        if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          echo "::error::The PR body check only runs on pull_request or pull_request_target events (this was: $EVENT_NAME)."
+          exit 1
+
+      - name: Fetch the checker
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Particle-Academy/.github
+          ref: ${{ inputs.checker-ref }}
+          path: .pr-body-check
+          persist-credentials: false
+          sparse-checkout: pr-body
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      - name: Check the PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node .pr-body-check/pr-body/check.mjs

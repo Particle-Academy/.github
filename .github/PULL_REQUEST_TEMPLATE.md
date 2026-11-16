@@ -1,8 +1,27 @@
-<!-- Thanks for contributing! Keep PRs focused and scoped to a single repo. -->
+<!--
+  Three sections, in this order, are required and checked in CI
+  (Particle-Academy/.github pr-body-check.yml). Keep the headings exactly as
+  written. Prompts inside these comments do not count as content.
+-->
 
-## What & why
+## Why
 
-<!-- What does this change, and why? Link any related issue (e.g. Closes #123). -->
+<!-- The problem, in plain words, and what fixing it unblocks. Link the issue if there is one (e.g. Closes #123). -->
+
+## What changes
+
+<!-- What this PR changes. Scoped to a single repo. -->
+
+## Who authorized it
+
+<!--
+  Who authorized this, and when. Cite at least one of:
+    - a ForceTheQuestion id (q_...)
+    - a council id (CC-fancy-NNNN)
+    - a G-NNN id
+    - the word "owner"
+  plus the date, as YYYY-MM-DD.
+-->
 
 ## Checklist
 
