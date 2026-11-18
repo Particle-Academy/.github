@@ -399,6 +399,18 @@
         }
       }
     },
+    "fancy-http-guard": {
+      "pypi": {
+        "starlette": {
+          "reason": "The framework this package's request guards and error-envelope handlers exist to integrate with, as a TEST dependency only (dependency-groups.test) -- [project] dependencies does not carry it, and the package soft-imports it. Covered by the envelope's standing carve-out of 2026-10-06 (RULES.md, rule 1): 'the framework a package exists to integrate with, as a TEST dependency ... No approval needed.' This entry does not grant an approval; it makes that ruling effective in the gate, scoped to this package only, the same shape as the fancy-inertia-server grant.",
+          "why": "The guards must refuse before the body is read and the handlers must turn Starlette's HTTPException into the shared envelope. Without Starlette those claims are proven only against the raw-ASGI fallback, never against the request and exception machinery a real host runs."
+        },
+        "fastapi": {
+          "reason": "The other framework this package exists to integrate with (it registers a handler for fastapi.exceptions.RequestValidationError), as a TEST dependency only, under the same carve-out and with the same scope. Never a runtime dependency. Freshness: 0.164.0 released 2026-11-18.",
+          "why": "FastAPI's own validation error is the 422 path into the envelope. The conformance rows for it can only run against FastAPI itself; pydantic arrives transitively under it."
+        }
+      }
+    },
     "fancy-inertia-server": {
       "pypi": {
         "starlette": {
