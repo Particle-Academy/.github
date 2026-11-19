@@ -145,7 +145,14 @@
           "reason": "Laravel broadcasting client; the transport behind fancy-query's live invalidation."
         },
         "pusher-js": {
-          "reason": "The websocket client Laravel Echo drives, including against Reverb."
+          "reason": "The websocket client Laravel Echo drives, including against Reverb.",
+          "freshness": {
+            "mode": "git",
+            "evidence": "https://github.com/pusher/pusher-js -- last commit 2026-10-30, pushed 2026-11-02",
+            "verifiedOn": "2026-11-14",
+            "expires": "2027-02-14",
+            "why": "Last npm publish was 8.6.0 on 2026-07-23 (114 days on 2026-11-14), but the repository is committed to: dependency and test-tooling bumps merged 2026-10-30. A release or a commit meets the bar."
+          }
         }
       }
     },
