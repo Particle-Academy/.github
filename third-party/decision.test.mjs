@@ -25,12 +25,16 @@ test('batch 1 (2026-11-19) is recorded with its question ids and scopes', () => 
     assert.equal(npm[name].decision.scope, 'kit-wide', name);
     assert.deepEqual(npm[name].decision.questions, [q], name);
   }
-  assert.equal(composer.packages['laravel/framework'].decision.scope, 'package-only');
-  assert.equal(composer.packages['laravel/framework'].decision.minimumVersion, '^13.0');
-  assert.equal(composer.authors.illuminate.decision.scope, 'package-only');
+  // Laravel moved from kit-wide entries onto the laravel-packages grant group (q_26036ea0).
+  const laravel = real.grantGroups['laravel-packages'].composer;
+  assert.equal(composer.packages['laravel/framework'], undefined);
+  assert.equal(composer.authors.illuminate, undefined);
+  assert.equal(laravel.packages['laravel/framework'].decision.scope, 'package-only');
+  assert.equal(laravel.packages['laravel/framework'].decision.minimumVersion, '^13.0');
+  assert.equal(laravel.authors.illuminate.decision.scope, 'package-only');
   const grant = real.packageGrants['@particle-academy/fancy-inertia'].npm['@inertiajs/react'].decision;
   assert.equal(grant.scope, 'package-only');
-  assert.deepEqual(grant.questions, ['q_63e61e43', 'q_906c61e0']);
+  assert.deepEqual(grant.questions, ['q_63e61e43', 'q_906c61e0', 'q_7fd61e5d']);
   assert.equal(grant.enforced, undefined, 'the fancy-inertia grant is where the scope puts it, so it is enforced');
 });
 

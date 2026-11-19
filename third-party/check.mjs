@@ -422,13 +422,25 @@ export function decisionProblems(allowlist) {
       if (d.enforced === false && !(typeof d.gap === 'string' && d.gap)) {
         problems.push(`${at}: enforced:false must say what the gap is`);
       }
-      const expected = d.scope === 'package-only' ? 'grant' : 'ecosystem';
-      if (DECISION_SCOPES.includes(d.scope) && placement !== expected && d.enforced !== false) {
-        problems.push(`${at}: a ${d.scope} decision belongs in ${expected === 'grant' ? 'packageGrants' : 'ecosystems'}; ` +
+      // A package-only decision may sit on a one-package grant or on a named
+      // group; either way it is scoped to an explicit list of packages.
+      const fits = d.scope === 'package-only' ? placement === 'grant' || placement.startsWith('group:') : placement === 'ecosystem';
+      if (DECISION_SCOPES.includes(d.scope) && !fits && d.enforced !== false) {
+        problems.push(`${at}: a ${d.scope} decision belongs in ${d.scope === 'package-only' ? 'packageGrants or grantGroups' : 'ecosystems'}; ` +
           'move it, or mark it enforced:false with the gap');
+      }
+      if (d.scope === 'package-only' && placement.startsWith('group:') && Array.isArray(d.packages) && !d.packages.includes(placement)) {
+        problems.push(`${at}: a decision on a group must name its group as "${placement}" in packages, so the record says who it covers`);
       }
     }
   };
+  for (const [group, g] of Object.entries(allowlist.grantGroups || {})) {
+    if (group.startsWith('_') || !g || typeof g !== 'object') continue;
+    for (const [eco, block] of groupEcosystems(g)) {
+      visit(`grantGroups.${group}.${eco}.authors`, block.authors, `group:${group}`);
+      visit(`grantGroups.${group}.${eco}.packages`, block.packages, `group:${group}`);
+    }
+  }
   for (const [eco, e] of Object.entries(allowlist.ecosystems || {})) {
     visit(`ecosystems.${eco}.authors`, e.authors, 'ecosystem');
     visit(`ecosystems.${eco}.packages`, e.packages, 'ecosystem');
@@ -441,6 +453,104 @@ export function decisionProblems(allowlist) {
     }
   }
   return problems;
+}
+
+// ---------------------------------------------------------------------------
+// Grant groups -- one approval for an explicit LIST of packages
+//
+// `packageGrants` keys one package to named dependencies, which cannot say
+// "every first-party Laravel package may use illuminate/*" without a grant per
+// split per package. A group can:
+//
+//   "grantGroups": {
+//     "laravel-packages": {
+//       "reason": "...",
+//       "members": ["particle-academy/agent-flo", ...],
+//       "composer": { "authors": { "illuminate": {...} }, "packages": { "laravel/framework": {...} } }
+//     }
+//   }
+//
+// Membership is a LITERAL list of identities (manifest name, repo directory or
+// remote name -- the same identities a grant is keyed by). It is never a
+// predicate on manifest content such as `extra.laravel`, because anyone can
+// write that key, and never a prefix, because a fork named
+// `particle-academy/agent-flo-fork` is not agent-flo. A new package joins with
+// a one-line addition, made when it is registered.
+// ---------------------------------------------------------------------------
+
+const GROUP_META = new Set(['reason', 'members', 'approval', 'note']);
+
+export function groupEcosystems(group) {
+  return Object.entries(group || {}).filter(([k, v]) => !GROUP_META.has(k) && !k.startsWith('_') && v && typeof v === 'object');
+}
+
+export function groupProblems(allowlist) {
+  const problems = [];
+  const known = new Set(Object.keys(allowlist.ecosystems || {}));
+  for (const [name, g] of Object.entries(allowlist.grantGroups || {})) {
+    if (name.startsWith('_')) continue;
+    if (!g || typeof g !== 'object') { problems.push(`grantGroups.${name}: must be an object`); continue; }
+    if (typeof g.reason !== 'string' || !g.reason) problems.push(`grantGroups.${name}: no reason`);
+    if (!Array.isArray(g.members) || !g.members.length) {
+      problems.push(`grantGroups.${name}: members must be a non-empty list of package identities`);
+    } else {
+      const seen = new Set();
+      for (const m of g.members) {
+        if (typeof m !== 'string' || !m) { problems.push(`grantGroups.${name}: every member must be a non-empty string`); continue; }
+        if (seen.has(m)) problems.push(`grantGroups.${name}: ${m} is listed twice`);
+        seen.add(m);
+      }
+    }
+    let decided = false;
+    for (const [eco, block] of Object.entries(g)) {
+      if (GROUP_META.has(eco) || eco.startsWith('_')) continue;
+      if (!known.has(eco)) { problems.push(`grantGroups.${name}: unknown ecosystem ${eco}`); continue; }
+      for (const kind of ['authors', 'packages']) {
+        for (const [dep, entry] of Object.entries(block?.[kind] || {})) {
+          if (dep.startsWith('_')) continue;
+          if (!entry?.reason) problems.push(`grantGroups.${name}.${eco}.${kind}.${dep}: no reason`);
+          if (entry?.decision) decided = true;
+          // A group entry that is ALSO kit-wide restricts nothing: classify()
+          // would approve it for everyone through the ecosystem entry anyway,
+          // and the group would read as a scope that is not being enforced.
+          if (allowlist.ecosystems?.[eco]?.[kind]?.[dep]) {
+            problems.push(`grantGroups.${name}.${eco}.${kind}.${dep}: also listed in ecosystems.${eco}.${kind}, so the group restricts nothing; delete one`);
+          }
+          const vendor = kind === 'packages' ? ownerOf(eco, dep) : null;
+          const vendorEntry = vendor ? allowlist.ecosystems?.[eco]?.authors?.[vendor] : null;
+          if (vendorEntry && !(Array.isArray(vendorEntry.except) && vendorEntry.except.includes(dep))) {
+            problems.push(`grantGroups.${name}.${eco}.packages.${dep}: the kit-wide author entry ${vendor} already approves it for everyone; add it to that entry's except list`);
+          }
+        }
+      }
+    }
+    if (!decided && !(typeof g.approval === 'string' && g.approval)) {
+      problems.push(`grantGroups.${name}: carries no owner decision on any entry, so it needs an approval note saying what it rests on (e.g. "pending owner review")`);
+    }
+  }
+  return problems;
+}
+
+function groupGrant(allowlist, ecosystem, depName, identities) {
+  const owner = ownerOf(ecosystem, depName);
+  for (const [group, g] of Object.entries(allowlist.grantGroups || {})) {
+    if (group.startsWith('_') || !Array.isArray(g?.members)) continue;
+    const member = identities.find((id) => g.members.includes(id));
+    if (!member) continue;
+    const block = g[ecosystem];
+    const pkg = block?.packages?.[depName];
+    if (pkg) return { allowed: true, via: 'group', group, grantedTo: member, reason: pkg.reason || '', entry: pkg };
+    const author = owner ? block?.authors?.[owner] : null;
+    if (author) return { allowed: true, via: 'group', group, grantedTo: member, owner, reason: author.reason || '', entry: author };
+  }
+  return null;
+}
+
+function groupsHolding(allowlist, ecosystem, depName) {
+  const owner = ownerOf(ecosystem, depName);
+  return Object.entries(allowlist.grantGroups || {})
+    .filter(([name, g]) => !name.startsWith('_') && (g?.[ecosystem]?.packages?.[depName] || (owner && g?.[ecosystem]?.authors?.[owner])))
+    .map(([name]) => name);
 }
 
 // The owner identity a registry actually lets us check FROM THE MANIFEST.
@@ -490,13 +600,21 @@ export function classify(allowlist, ecosystem, depName, manifestName) {
     }
   }
 
+  const grouped = groupGrant(allowlist, ecosystem, depName, identities);
+  if (grouped) return grouped;
+
   const pkgEntry = eco.packages?.[depName];
   if (pkgEntry) return { allowed: true, via: 'package', reason: pkgEntry.reason || '', entry: pkgEntry };
 
   const owner = ownerOf(ecosystem, depName);
   if (owner) {
     const authorEntry = eco.authors?.[owner];
-    if (authorEntry) return { allowed: true, via: 'author', reason: authorEntry.reason || '', owner, entry: authorEntry };
+    // `except` carves named packages out of a vendor-wide entry. laravel/* is
+    // founding-list kit-wide, but laravel/framework is scoped to a group by
+    // the owner, and without the carve-out the vendor entry would quietly
+    // approve it for everyone and the group would restrict nothing.
+    const carvedOut = Array.isArray(authorEntry?.except) && authorEntry.except.includes(depName);
+    if (authorEntry && !carvedOut) return { allowed: true, via: 'author', reason: authorEntry.reason || '', owner, entry: authorEntry };
   }
 
   // A grant that exists for a DIFFERENT package is the most useful thing we can
@@ -506,11 +624,12 @@ export function classify(allowlist, ecosystem, depName, manifestName) {
     if (identities.includes(pkgName) || pkgName.startsWith('_')) continue;
     if (byEco?.[ecosystem]?.[depName]) elsewhere.push(pkgName);
   }
+  for (const group of groupsHolding(allowlist, ecosystem, depName)) elsewhere.push(`the members of group ${group}`);
   return {
     allowed: false,
     via: 'none',
     reason: elsewhere.length
-      ? `Granted to ${elsewhere.join(', ')} only. A grant is scoped to the package it was made for; approve it for ${manifestName || 'this package'} explicitly or do not use it here.`
+      ? `Granted to ${elsewhere.join(', ')} only. A grant is scoped to the packages it was made for; approve it for ${manifestName || 'this package'} explicitly (or add it to the group) or do not use it here.`
       : 'Not on the allowlist.',
     identities,
   };
@@ -739,7 +858,7 @@ export function inheritFromApprovedParents(repoDir, perDep) {
       // `allowed` is implied by `passedOnOwn` today (an unapproved dependency
       // always carries an `unapproved` finding); it is stated anyway so the
       // rule survives a future change to how findings are recorded.
-      if (!p.verdict.allowed || p.verdict.firstParty || !['author', 'package', 'grant'].includes(p.verdict.via)) continue;
+      if (!p.verdict.allowed || p.verdict.firstParty || !['author', 'package', 'grant', 'group'].includes(p.verdict.via)) continue;
       if (!passedOnOwn.get(p)) continue;
       if (!searches.has(p)) searches.set(p, shortestLockPaths(lock.edges, p.record.name));
       const search = searches.get(p);
@@ -757,9 +876,10 @@ export function inheritFromApprovedParents(repoDir, perDep) {
 
     const { parent, route } = candidates[0];
     const rootGrant = { via: parent.verdict.via,
-      name: parent.verdict.via === 'author' ? parent.verdict.owner : parent.record.name,
+      name: parent.verdict.owner || parent.record.name,
+      ...(parent.verdict.group ? { group: parent.verdict.group } : {}),
       ...(parent.verdict.grantedTo ? { grantedTo: parent.verdict.grantedTo } : {}) };
-    const grantLabel = `${rootGrant.via} ${rootGrant.name}${rootGrant.grantedTo ? ` for ${rootGrant.grantedTo}` : ''}`;
+    const grantLabel = `${rootGrant.via}${rootGrant.group ? ` ${rootGrant.group}:` : ''} ${rootGrant.name}${rootGrant.grantedTo ? ` for ${rootGrant.grantedTo}` : ''}`;
     const displayPath = route.map((node) => node.includes('/node_modules/') ? node.slice(node.lastIndexOf('/node_modules/') + 14) : node);
     d.record.inheritedFrom = parent.record.name;
     d.record.inheritedPath = displayPath;
@@ -783,6 +903,22 @@ export function inheritFromApprovedParents(repoDir, perDep) {
         `Waived: ${waived.map((w) => w.kind).join(', ')}.`,
     });
   }
+}
+
+// The fields that never reach a consumer. Everything else counts as runtime,
+// including Python extras (`optional-dependencies.*`, installable by any
+// consumer with `pkg[extra]`) and Cargo `build-dependencies` (compiled for
+// every consumer's build). Listing the dev fields rather than the runtime ones
+// means a field this file has never heard of fails closed.
+const DEV_FIELDS = {
+  npm: new Set(['devDependencies']),
+  composer: new Set(['require-dev']),
+  crates: new Set(['dev-dependencies']),
+};
+
+export function isDevField(ecosystem, field) {
+  if (ecosystem === 'pypi') return String(field).startsWith('dependency-groups.');
+  return DEV_FIELDS[ecosystem]?.has(field) ?? false;
 }
 
 export async function checkRepo(repoDir, allowlist, options = {}) {
@@ -845,6 +981,18 @@ export async function checkRepo(repoDir, allowlist, options = {}) {
           kind: 'unapproved',
           ...record,
           message: `${dep.name} (${manifest.ecosystem}, ${dep.field}) is not approved for ${identities.join(' / ')}. ${verdict.reason}`,
+        });
+        continue;
+      }
+      if (verdict.entry?.decision?.scope === 'dev-only' && !isDevField(manifest.ecosystem, dep.field)) {
+        // Not inheritable: the owner approved this for dev and test use, and a
+        // runtime parent requiring it too does not change what WE declared.
+        own.push({
+          level: 'error',
+          kind: 'dev-only-in-runtime',
+          ...record,
+          message: `${dep.name} (${manifest.ecosystem}, ${dep.field}) is approved dev-only, but ${dep.field} ships to consumers. ` +
+            'Move it to a dev field, or ask the owner to widen the decision.',
         });
         continue;
       }
