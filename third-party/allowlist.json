@@ -335,6 +335,14 @@
         }
       }
     },
+    "fancy-labs": {
+      "_reason": "The lab is a Laravel APPLICATION with an unnamed package.json, so this grant is keyed on the REMOTE name (Particle-Academy/fancy-labs).",
+      "npm": {
+        "@simplewebauthn/browser": {
+          "reason": "Owner approved (ForceTheQuestion q_8b61f183, answer msg_946d845c, recorded in the envelope's .ai/knowledge/third-party-allowlist.md): the browser ceremony helper behind the lab's passkeys benchmark and the passkey step-up for council owner actions. We write no cryptography of our own."
+        }
+      }
+    },
     "particle-academy/fancy-passkeys": {
       "composer": {
         "web-auth/webauthn-lib": {
