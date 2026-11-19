@@ -105,9 +105,59 @@ dev-only under `ecosystems`, package-only under `packageGrants`. When the gate
 cannot yet express a scope, the entry says so with `"enforced": false` and a
 `gap` explaining why, rather than looking enforced when it is not.
 
-Two gaps are open: `packageGrants` can only name one package per key, so a
-scope over a class of packages ("every Laravel package") is not expressible;
-and `dev-only` is recorded but not yet enforced against the manifest field.
+A package-only decision may also sit on a **grant group** (below); it then names
+the group as `"packages": ["group:<name>"]`.
+
+**`dev-only` is enforced.** A dependency whose entry carries a `dev-only`
+decision fails as `dev-only-in-runtime` when it is declared in a field that
+ships to consumers. Only `devDependencies`, `require-dev`, Cargo
+`dev-dependencies` and Python `dependency-groups.*` count as dev; everything
+else is runtime, including Python extras (any consumer can install
+`pkg[extra]`) and Cargo `build-dependencies`, so a field this checker has never
+heard of fails closed. Inheritance cannot waive it: an approved runtime parent
+requiring the same package does not change what we declared.
+
+### Grant groups: one approval for an explicit list of packages
+
+`packageGrants` keys one package to named dependencies, so a scope over a class
+of packages ("our Laravel packages may use `illuminate/*`") would take a grant
+per split per package. `grantGroups` says it once:
+
+```json
+"grantGroups": {
+  "laravel-packages": {
+    "reason": "Our Laravel packages.",
+    "members": ["particle-academy/agent-flo", "particle-academy/holy-sheet"],
+    "composer": {
+      "authors":  { "illuminate": { "reason": "...", "decision": { "...": "..." } } },
+      "packages": { "laravel/framework": { "reason": "...", "decision": { "...": "..." } } }
+    }
+  }
+}
+```
+
+- **Members are a literal list** of the same identities a grant is keyed by
+  (manifest name, repo directory, remote name). Never a prefix, and never a
+  predicate on manifest content such as `extra.laravel`, because anyone can
+  write that key. **A new Laravel package joins with a one-line addition, made
+  when it is registered** (the same moment it enters `PackageRegistry::PLANNED`).
+- `classify()` checks first-party, then `packageGrants`, then groups, then the
+  kit-wide `ecosystems` entries.
+- `groupProblems()` (run by `grant-groups.test.mjs`) requires a reason on the
+  group and every entry, a non-empty member list with no duplicates, known
+  ecosystems, and either an owner decision on an entry or an `approval` note
+  (e.g. `"pending owner review (apps)"`). It also refuses a group entry that a
+  kit-wide entry already approves for everyone, because then the group
+  restricts nothing.
+- **`except`** on a kit-wide author entry carves named packages out of it.
+  `laravel/*` stays founding-list kit-wide, but `laravel/framework` is excepted
+  so that only the groups approve it.
+
+Groups today (owner, 2026-11-19, q_26036ea0): **`laravel-packages`** carries the
+owner's Laravel decision for our Laravel packages, **packages only**. The
+applications (`laravel-apps-pending`) and Prism's estate
+(`laravel-prism-pending`) keep the coverage they had, marked pending owner
+review, until the owner rules on them; nothing they declare changed verdict.
 
 Entries without a `decision` are not owner approvals unless their `approval`
 string cites one. The founding list of 2026-08-19 is not an approval.
