@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a bug in a Fancy UI package
+description: Report a bug in a Fancy Dev Kit package
 title: "[Bug]: "
 labels: ["bug"]
 body:

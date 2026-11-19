@@ -1,6 +1,6 @@
 # Security Policy
 
-We take the security of the Fancy UI suite seriously. Thank you for helping keep
+We take the security of the Fancy Dev Kit seriously. Thank you for helping keep
 our users safe.
 
 ## Reporting a Vulnerability

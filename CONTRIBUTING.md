@@ -1,6 +1,6 @@
-# Contributing to Fancy UI
+# Contributing to Fancy Dev Kit
 
-Thanks for wanting to build with us. **Fancy UI** is Particle Academy's suite
+Thanks for wanting to build with us. **Fancy Dev Kit** is Particle Academy's suite
 of UI primitives engineered for **Human+ UX** — applications where humans and
 agents share the same UI surface, trading control fluidly through MCP tool
 bridges instead of DOM scraping.
@@ -21,20 +21,20 @@ You don't have to write code to move the suite forward:
   need on the first pass.
 - **Open a pull request** — fix a bug, sharpen the docs, add a test, or land a
   feature. See [Working in a package](#working-in-a-package) below.
-- **Propose a new component** — Fancy UI grows by adding primitives that earn
+- **Propose a new component** — Fancy Dev Kit grows by adding primitives that earn
   their place. Open a feature request describing the primitive, the props
   surface a human *and* an agent would author against, and how it satisfies the
   [Human+ component contract](#the-human-component-contract). Generic beats
   themed: each primitive should be a reusable building block, not a one-app
   widget.
-- **Register your project** — built something with Fancy UI? Tell us. We
+- **Register your project** — built something with Fancy Dev Kit? Tell us. We
   showcase community projects, and registering yours is the first step toward
   the badge below.
-- **Wear the badge** — shipping with Fancy UI? Add the **Powered by Fancy UI**
+- **Wear the badge** — shipping with Fancy Dev Kit? Add the **Powered by Fancy**
   badge to your README:
 
   ```md
-  [![Powered by Fancy UI](https://img.shields.io/badge/Powered%20by-Fancy%20UI-6d28d9)](https://github.com/Particle-Academy)
+  [![Powered by Fancy](https://img.shields.io/badge/Powered%20by-Fancy-6d28d9)](https://github.com/Particle-Academy)
   ```
 
 ---
