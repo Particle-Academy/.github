@@ -47,7 +47,7 @@
       "authors": {
         "@types": {
           "reason": "DefinitelyTyped. Type declarations only -- no runtime code reaches a consumer's bundle, and every stub comes from one repository under one review process.",
-          "approval": "Owner (Wish Born), 2026-08-19, in the founding allowlist commit 55049dc (\"feat: the third-party allowlist, and the checker that enforces it\"). Approved as an author (scope) entry for DefinitelyTyped type stubs used across the suite.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision recorded; owner review pending (audit 2026-11-19)",
           "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because the stubs the estate uses now pass the 92-day bar on the registry: @types/react 19.3.0 and @types/react-dom 19.3.0 published 2026-09-09 (71 days), @types/node 26.6.6 2026-10-28, @types/three 0.187.0 2026-10-30, @types/google.maps 3.66.10 2026-11-06. DefinitelyTyped last commit on master 2026-11-17. Each @types/* stub is now checked individually from the registry. Watch @types/leaflet: last release 1.9.22 on 2026-08-01, passing only on the registry `modified` timestamp 2026-10-04, which ages out 2027-01-04. Converted by an agent under the freshness rule; the approval itself is unchanged."
         },
         "@tanstack": {
@@ -87,7 +87,7 @@
         },
         "tsup": {
           "reason": "The build tool for most TypeScript packages in the suite.",
-          "approval": "Owner (Wish Born), 2026-08-19, in the founding allowlist commit 55049dc (\"feat: the third-party allowlist, and the checker that enforces it\"). Approved as the build tool for most TypeScript packages in the suite.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision at founding. Owner decision 2026-11-15: ForceTheQuestion q_922b2bf0 (answer msg_6778b6b3), \"renew the exception 3 months\" -- the owner chose to keep tsup and renew its freshness override (PR #16, which this conversion superseded before it merged).",
           "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because tsup passes the 92-day bar on the registry: 9.0.0 published 2026-10-14 (36 days); last commit on main 2026-10-14. This supersedes the owner-approved renewal to 2027-02-19 (q_922b2bf0, msg_6778b6b3, PR #16): no override is needed while releases are inside the bar. Without a new release tsup crosses the bar on 2027-01-14. Converted by an agent under the freshness rule; the approval itself is unchanged.",
           "review": "Last RELEASE was 9.0.0 on 2026-10-14; it passes the 92-day bar on its own until 2027-01-14. The tsdown migration question stays open: if tsup goes quiet again, migrate rather than renew."
         },
@@ -280,7 +280,7 @@
       "npm": {
         "leaflet": {
           "reason": "The OSM map engine this package exists to wrap.",
-          "approval": "Owner (Wish Born), 2026-08-19, in the founding allowlist commit 55049dc (\"feat: the third-party allowlist, and the checker that enforces it\"). Granted to @particle-academy/fancy-map as the OSM map engine it exists to wrap.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision recorded; owner review pending (audit 2026-11-19)",
           "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because leaflet passes the 92-day bar on the registry: 2.0.0-beta.4 published 2026-11-12 (7 days); last commit on main 2026-11-18. Note the pass comes from the 2.0 beta line: the latest stable, 1.9.4 (the range fancy-map uses), dates from 2023-05-18. Converted by an agent under the freshness rule; the approval itself is unchanged."
         },
         "@googlemaps/js-api-loader": {
@@ -330,7 +330,7 @@
       "npm": {
         "@simplewebauthn/browser": {
           "reason": "The browser ceremony helper the passkey UI drives. We write no cryptography of our own.",
-          "approval": "Owner (Wish Born), 2026-08-19, in the founding allowlist commit 55049dc (\"feat: the third-party allowlist, and the checker that enforces it\"). Granted to @particle-academy/fancy-passkeys-ui as the browser ceremony helper the passkey UI drives.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision at founding. Owner decision 2026-11-13: retroactive approval of the WebAuthn libraries (@simplewebauthn/server, @simplewebauthn/browser, web-auth/webauthn-lib), ForceTheQuestion q_8b61f183 (answer msg_946d845c), \"approve all three\"; recorded in the envelope's .ai/knowledge/third-party-allowlist.md.",
           "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because @simplewebauthn/browser passes the 92-day bar on the registry: 14.0.0 published 2026-09-02 (78 days); last commit on master 2026-11-06. Without a new release it crosses the bar on 2026-12-03. Converted by an agent under the freshness rule; the approval itself is unchanged."
         }
       }
@@ -517,7 +517,7 @@
         },
         "leaflet": {
           "reason": "Peer of fancy-map, which the showcase demonstrates.",
-          "approval": "Owner (Wish Born), 2026-08-19, in the founding allowlist commit 55049dc (\"feat: the third-party allowlist, and the checker that enforces it\"). Granted to the showcase as the peer of fancy-map it demonstrates.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision recorded; owner review pending (audit 2026-11-19)",
           "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed: same finding as the fancy-map grant (2.0.0-beta.4 published 2026-11-12; stable 1.9.4 is from 2023-05-18; last commit on main 2026-11-18). Converted by an agent under the freshness rule; the approval itself is unchanged."
         },
         "@googlemaps/js-api-loader": {
@@ -547,7 +547,7 @@
         },
         "@simplewebauthn/browser": {
           "reason": "Peer of fancy-passkeys-ui.",
-          "approval": "Owner (Wish Born), 2026-08-19, in the founding allowlist commit 55049dc (\"feat: the third-party allowlist, and the checker that enforces it\"). Granted to the showcase as the peer of fancy-passkeys-ui.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision at founding. Owner decision 2026-11-13: retroactive approval of the WebAuthn libraries (@simplewebauthn/server, @simplewebauthn/browser, web-auth/webauthn-lib), ForceTheQuestion q_8b61f183 (answer msg_946d845c), \"approve all three\"; recorded in the envelope's .ai/knowledge/third-party-allowlist.md.",
           "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed: same finding as the fancy-passkeys-ui grant (14.0.0 published 2026-09-02; crosses the bar on 2026-12-03 without a new release). Converted by an agent under the freshness rule; the approval itself is unchanged."
         },
         "ink": {
