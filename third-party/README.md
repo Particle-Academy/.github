@@ -82,6 +82,36 @@ A direct dependency passes if any one of these matches.
    name when writing a grant for an application** — it is the one identity that
    is the same in both places.
 
+### Recording the owner's decision: `decision`
+
+An approval has a **scope** (owner, 2026-11-19): **kit-wide** (any package may
+use it), **dev-only** (dev and test dependencies only) or **package-only** (the
+named packages only). An entry the owner has decided carries it:
+
+```json
+"decision": {
+  "scope": "kit-wide",
+  "owner": "wishborn",
+  "date": "2026-11-19",
+  "questions": ["q_1983859b"],
+  "covers": ["react", "react-dom"]
+}
+```
+
+`decisionProblems()` in `check.mjs` (run by `decision.test.mjs`) requires the
+owner, the date and at least one question id, a `packages` list on a
+package-only decision, and **placement that matches the scope**: kit-wide and
+dev-only under `ecosystems`, package-only under `packageGrants`. When the gate
+cannot yet express a scope, the entry says so with `"enforced": false` and a
+`gap` explaining why, rather than looking enforced when it is not.
+
+Two gaps are open: `packageGrants` can only name one package per key, so a
+scope over a class of packages ("every Laravel package") is not expressible;
+and `dev-only` is recorded but not yet enforced against the manifest field.
+
+Entries without a `decision` are not owner approvals unless their `approval`
+string cites one. The founding list of 2026-08-19 is not an approval.
+
 First-party packages (`@particle-academy/*`, `particle-academy/*`, and the named
 Python distributions) are ours and are not a dependency question.
 

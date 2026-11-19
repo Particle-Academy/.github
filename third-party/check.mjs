@@ -394,6 +394,55 @@ export function loadAllowlist(file) {
   return raw;
 }
 
+// An owner decision recorded on an entry. Optional: most entries predate it
+// (see `approval` strings that cite the founding list). When present it must say
+// WHO decided, WHEN, in WHICH question, and with WHAT scope -- and the entry
+// must sit where that scope puts it, or say plainly that the gate does not
+// enforce it yet. A decision whose placement silently disagrees with its scope
+// is the kind of record that reads as approval for something nobody approved.
+export const DECISION_SCOPES = ['kit-wide', 'dev-only', 'package-only'];
+
+export function decisionProblems(allowlist) {
+  const problems = [];
+  const visit = (where, entries, placement) => {
+    for (const [name, entry] of Object.entries(entries || {})) {
+      if (name.startsWith('_') || !entry || typeof entry !== 'object' || !('decision' in entry)) continue;
+      const d = entry.decision;
+      const at = `${where} ${name}`;
+      if (!d || typeof d !== 'object') { problems.push(`${at}: decision must be an object`); continue; }
+      if (!DECISION_SCOPES.includes(d.scope)) problems.push(`${at}: scope must be one of ${DECISION_SCOPES.join(', ')}`);
+      if (typeof d.owner !== 'string' || !d.owner) problems.push(`${at}: decision names no owner`);
+      if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d.date || '')) problems.push(`${at}: decision date must be YYYY-MM-DD`);
+      if (!Array.isArray(d.questions) || !d.questions.length || !d.questions.every((q) => /^q_[0-9a-f]{8}$/.test(q))) {
+        problems.push(`${at}: decision must cite the owner's question ids (q_xxxxxxxx)`);
+      }
+      if (d.scope === 'package-only' && (!Array.isArray(d.packages) || !d.packages.length)) {
+        problems.push(`${at}: a package-only decision must name its packages`);
+      }
+      if (d.enforced === false && !(typeof d.gap === 'string' && d.gap)) {
+        problems.push(`${at}: enforced:false must say what the gap is`);
+      }
+      const expected = d.scope === 'package-only' ? 'grant' : 'ecosystem';
+      if (DECISION_SCOPES.includes(d.scope) && placement !== expected && d.enforced !== false) {
+        problems.push(`${at}: a ${d.scope} decision belongs in ${expected === 'grant' ? 'packageGrants' : 'ecosystems'}; ` +
+          'move it, or mark it enforced:false with the gap');
+      }
+    }
+  };
+  for (const [eco, e] of Object.entries(allowlist.ecosystems || {})) {
+    visit(`ecosystems.${eco}.authors`, e.authors, 'ecosystem');
+    visit(`ecosystems.${eco}.packages`, e.packages, 'ecosystem');
+  }
+  for (const [pkg, byEco] of Object.entries(allowlist.packageGrants || {})) {
+    if (pkg.startsWith('_')) continue;
+    for (const [eco, grants] of Object.entries(byEco || {})) {
+      if (eco.startsWith('_')) continue;
+      visit(`packageGrants.${pkg}.${eco}`, grants, 'grant');
+    }
+  }
+  return problems;
+}
+
 // The owner identity a registry actually lets us check FROM THE MANIFEST.
 // These are not equivalent concepts and pretending they are is how an author
 // allow silently covers a package nobody vetted.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-11",
+  "updated": "2026-11-19",
   "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
   "policy": {
     "scope": "direct-only",
@@ -57,18 +57,40 @@
           "reason": "Testing Library. Test-only, never shipped, and the suite's TDD rule depends on it."
         },
         "@tailwindcss": {
-          "reason": "Tailwind CSS v4 ships its integrations as @tailwindcss/* packages. react-fancy is built on Tailwind v4; the framework and its integrations are one project."
+          "reason": "Tailwind CSS v4 ships its integrations as @tailwindcss/* packages. react-fancy is built on Tailwind v4; the framework and its integrations are one project.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc). The owner's decision of 2026-11-19 (q_6314f3dc) names tailwindcss and @tailwindcss/vite only, and both are now listed under packages with that decision. The rest of the @tailwindcss scope rests on the founding list; owner review pending."
         }
       },
       "packages": {
         "react": {
-          "reason": "The UI framework the whole suite is built on. React 19 only since kit 0.5."
+          "reason": "The UI framework the whole suite is built on. React 19 only since kit 0.5.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_1983859b"],
+            "covers": ["react", "react-dom"]
+          }
         },
         "react-dom": {
-          "reason": "React's DOM renderer. Inseparable from react."
+          "reason": "React's DOM renderer. Inseparable from react.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_1983859b"],
+            "covers": ["react", "react-dom"]
+          }
         },
         "typescript": {
-          "reason": "The language every TS package is written in."
+          "reason": "The language every TS package is written in.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_41f277ba"],
+            "covers": ["typescript", "vite", "@vitejs/plugin-react"]
+          }
         },
         "typescript-eslint": {
           "reason": "TypeScript support for ESLint; the rules-of-hooks lint runs on it."
@@ -98,19 +120,50 @@
           "reason": "TypeScript execution for build and generator scripts."
         },
         "vite": {
-          "reason": "The dev server and bundler for every app and for fancy-pwa's peer surface."
+          "reason": "The dev server and bundler for every app and for fancy-pwa's peer surface.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_41f277ba"],
+            "covers": ["typescript", "vite", "@vitejs/plugin-react"]
+          }
         },
         "laravel-vite-plugin": {
           "reason": "Vite integration for Laravel apps; part of the Laravel toolchain."
         },
         "@vitejs/plugin-react": {
-          "reason": "React support for Vite. Maintained by the Vite team."
+          "reason": "React support for Vite. Maintained by the Vite team.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_41f277ba"],
+            "covers": ["typescript", "vite", "@vitejs/plugin-react"]
+          }
         },
         "concurrently": {
           "reason": "Runs the dev processes side by side in app scaffolds."
         },
         "tailwindcss": {
-          "reason": "The styling system react-fancy is built on; a peer dependency of every UI package."
+          "reason": "The styling system react-fancy is built on; a peer dependency of every UI package.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_6314f3dc"],
+            "covers": ["tailwindcss", "@tailwindcss/vite"]
+          }
+        },
+        "@tailwindcss/vite": {
+          "reason": "Tailwind v4's Vite integration; how every app and showcase build compiles Tailwind. Listed by name so the owner's decision attaches to it -- the @tailwindcss author entry still covers the scope's other packages on the founding list alone.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_6314f3dc"],
+            "covers": ["tailwindcss", "@tailwindcss/vite"]
+          }
         },
         "clsx": {
           "reason": "Conditional className joining. Runtime dependency of react-fancy, fancy-whiteboard and fancy-flow.",
@@ -139,7 +192,17 @@
           "reason": "The HTTP client Laravel and Inertia scaffolds ship with; peer of classroom and job-board."
         },
         "@inertiajs/react": {
-          "reason": "Inertia.js. The integration seam fancy-inertia and fancy-query exist to serve."
+          "reason": "Inertia.js. The integration seam fancy-inertia and fancy-query exist to serve.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_63e61e43", "q_906c61e0"],
+            "packages": ["@particle-academy/fancy-inertia"],
+            "otherUse": "Only through fancy-inertia, as an inherited dependency. A direct declaration anywhere else is out of scope.",
+            "enforced": false,
+            "gap": "Still listed kit-wide here, so the gate does not yet refuse a direct declaration outside fancy-inertia. Narrowing it now would fail fancy-query, px-ui-sandbox (pa-ux-sandbox), fancy-starter-kit and fancy-labs, which declare it directly today. This entry is removed, leaving only the fancy-inertia grant, once those move to consuming Inertia through fancy-inertia (sandbox/approvals-plan.md in the envelope)."
+          }
         },
         "laravel-echo": {
           "reason": "Laravel broadcasting client; the transport behind fancy-query's live invalidation."
@@ -161,10 +224,22 @@
       "identityNote": "Every Packagist name is vendor/package and Packagist enforces vendor ownership at registration, so the vendor prefix is a genuine, checkable owner identity -- the strongest of the three ecosystems.",
       "authors": {
         "laravel": {
-          "reason": "The framework the PHP side of the suite is built on. Anything Laravel publishes is in scope by construction."
+          "reason": "Packages published under the laravel vendor (cashier, fortify, mcp, ai, pint, tinker, ...). laravel/framework itself is listed under packages with the owner's decision.",
+          "approval": "founding list (agent-seeded 2026-08-19, 55049dc). The owner's decision of 2026-11-19 (q_7d592ac6, q_906c61e0) covers laravel/framework and illuminate/* only. Every other laravel/* package rests on the founding list; owner review pending."
         },
         "illuminate": {
-          "reason": "Laravel's read-only component splits. Same project, same releases, different package names."
+          "reason": "Laravel's read-only component splits. Same project, same releases, different package names.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_7d592ac6", "q_906c61e0"],
+            "packages": ["all first-party Laravel packages"],
+            "minimumVersion": "^13.0",
+            "note": "Laravel is a tier-1 supported framework, not the kit's base. Every first-party Laravel package declares its Laravel dependency and sets the floor to ^13.0.",
+            "enforced": false,
+            "gap": "packageGrants names one package per key and one dependency per entry, so 'illuminate/* for every Laravel package' is not expressible: it would take a grant per split per package, and a new Laravel package would fail until someone remembered to add it. Kept as an author entry until the schema has a named grant group (proposed in sandbox/approvals-plan.md in the envelope)."
+          }
         },
         "symfony": {
           "reason": "Laravel is built on Symfony components; symfony/process and symfony/yaml come from the same foundation we already depend on."
@@ -177,6 +252,20 @@
         }
       },
       "packages": {
+        "laravel/framework": {
+          "reason": "Laravel. A tier-1 supported framework for the PHP side of the kit, not its base.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_7d592ac6", "q_906c61e0"],
+            "packages": ["all first-party Laravel packages"],
+            "minimumVersion": "^13.0",
+            "note": "Every first-party Laravel package declares its Laravel dependency and sets the floor to ^13.0.",
+            "enforced": false,
+            "gap": "Same gap as the illuminate author entry: 'every Laravel package' is a class, not one package, and packageGrants can only name one. Whether the Laravel applications (pa-ux-sandbox, fancy-starter-kit, fancy-labs, laravel-jobs-reference) fall under 'Laravel packages' is an open question for the owner; they keep resolving here until it is answered."
+          }
+        },
         "phpunit/phpunit": {
           "reason": "Pest runs on PHPUnit; several packages target it directly."
         },
@@ -196,7 +285,17 @@
           "reason": "The HTTP client behind the fancy-git provider adapters and Laravel's HTTP facade."
         },
         "inertiajs/inertia-laravel": {
-          "reason": "The server half of Inertia; the seam fancy-seo and fancy-inertia are built around."
+          "reason": "The server half of Inertia.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_63e61e43", "q_906c61e0"],
+            "packages": ["fancy-inertia"],
+            "otherUse": "Only through a first-party PHP Inertia bridge, which does not exist yet. fancy-inertia is npm-only, so no Composer manifest can take this grant today.",
+            "enforced": false,
+            "gap": "Still listed kit-wide here, so the gate does not refuse it. Direct declarations today: pa-ux-sandbox, fancy-starter-kit and fancy-labs (require); change-council, fancy-captcha and fancy-compliance only suggest it, which the gate does not read. This entry becomes a grant on the PHP bridge once that package is registered and built."
+          }
         },
         "spatie/browsershot": {
           "reason": "Headless-Chrome rendering for the showcase's PDF and image capture."
@@ -252,6 +351,20 @@
   },
   "packageGrants": {
     "_note": "A grant approves a library FOR ONE PACKAGE, because that package exists to wrap or host it. It does not approve the library anywhere else. Keys are the manifest name (package.json name / composer.json name / [project] name), falling back to the repo directory name for manifests that declare none.",
+    "@particle-academy/fancy-inertia": {
+      "npm": {
+        "@inertiajs/react": {
+          "reason": "The Inertia client this package exists to bridge. A peer (the consumer owns the version) and a devDependency for its own tests.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_63e61e43", "q_906c61e0"],
+            "packages": ["@particle-academy/fancy-inertia"]
+          }
+        }
+      }
+    },
     "@particle-academy/fancy-echarts": {
       "npm": {
         "echarts": {
