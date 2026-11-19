@@ -30,10 +30,12 @@ jobs:
       # expense, and this is what keeps that true.
       - name: Assert the checker has no dependencies
         run: |
-          if [ -f third-party/package.json ]; then
-            echo "::error::third-party/ must not have a package.json. The checker takes no dependencies."
-            exit 1
-          fi
+          for dir in third-party pr-body; do
+            if [ -f "$dir/package.json" ]; then
+              echo "::error::$dir/ must not have a package.json. The checker takes no dependencies."
+              exit 1
+            fi
+          done
 
       # This also guards the allowlist itself: the checker reads it at runtime,
       # so a malformed one would fail every repo in the suite at once.
@@ -45,3 +47,7 @@ jobs:
       # tests already do.
       - name: Test
         run: node --test "third-party/*.test.mjs"
+
+      # The PR body checker that every repo's pr-body-check.yml call fetches.
+      - name: Test the PR body checker
+        run: node --test "pr-body/*.test.mjs"

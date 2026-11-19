@@ -8,7 +8,10 @@ automatically applies these to any repo in the org that does not define its own:
 - [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
 - [`SECURITY.md`](./SECURITY.md) — responsible disclosure
 - [`.github/ISSUE_TEMPLATE/`](./.github/ISSUE_TEMPLATE) — bug / feature issue forms
-- [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md)
+- [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md) — the three required
+  sections (`## Why`, `## What changes`, `## Who authorized it`), enforced by the reusable
+  [`pr-body-check.yml`](./.github/workflows/pr-body-check.yml) workflow and
+  [`pr-body/check.mjs`](./pr-body/check.mjs)
 - [`profile/README.md`](./profile/README.md) — the public org profile shown on the org landing page
 
 To override any default for a specific package, add the corresponding file to
