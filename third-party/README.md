@@ -153,11 +153,24 @@ per split per package. `grantGroups` says it once:
   `laravel/*` stays founding-list kit-wide, but `laravel/framework` is excepted
   so that only the groups approve it.
 
-Groups today (owner, 2026-11-19, q_26036ea0): **`laravel-packages`** carries the
-owner's Laravel decision for our Laravel packages, **packages only**. The
-applications (`laravel-apps-pending`) and Prism's estate
-(`laravel-prism-pending`) keep the coverage they had, marked pending owner
-review, until the owner rules on them; nothing they declare changed verdict.
+Groups today (owner, 2026-11-19), each Laravel, each **package-only**:
+
+| Group | Members | Decision |
+|---|---|---|
+| `laravel-packages` | our Laravel packages | q_26036ea0 |
+| `laravel-apps` | pa-ux-sandbox, fancy-starter-kit, fancy-labs, website | q_7a15982f |
+| `laravel-prism` | Prism's 11 Laravel repos | q_dc78bdad |
+| `laravel-apps-pending` | laravel-jobs-reference | **none**: pending |
+
+`laravel-jobs-reference` was deliberately left out of q_7a15982f: the owner
+wants it to become a lab test in fancy-labs rather than a separate app. It keeps
+its old coverage until then; when the lab lane replaces it and the repo is
+archived, delete the group.
+
+**Inertia is not kit-wide.** Every declarer holds its own `packageGrants`
+entry: fancy-inertia, fancy-query and the three kit apps (q_7fd61e5d), and
+prism-labs, prism-sandbox and website (q_dc78bdad). Anything else that declares
+`@inertiajs/react` or `inertiajs/inertia-laravel` fails as unapproved.
 
 Entries without a `decision` are not owner approvals unless their `approval`
 string cites one. The founding list of 2026-08-19 is not an approval.
