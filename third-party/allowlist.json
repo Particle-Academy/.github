@@ -48,7 +48,7 @@
         "@types": {
           "reason": "DefinitelyTyped. Type declarations only -- no runtime code reaches a consumer's bundle, and every stub comes from one repository under one review process.",
           "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision recorded; owner review pending (audit 2026-11-19)",
-          "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because the stubs the estate uses now pass the 92-day bar on the registry: @types/react 19.3.0 and @types/react-dom 19.3.0 published 2026-09-09 (71 days), @types/node 26.6.6 2026-10-28, @types/three 0.187.0 2026-10-30, @types/google.maps 3.66.10 2026-11-06. DefinitelyTyped last commit on master 2026-11-17. Each @types/* stub is now checked individually from the registry. Watch @types/leaflet: last release 1.9.22 on 2026-08-01, passing only on the registry `modified` timestamp 2026-10-04, which ages out 2027-01-04. Converted by an agent under the freshness rule; the approval itself is unchanged."
+          "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because the stubs the estate uses now pass the 92-day bar on the registry: @types/react 19.3.0 and @types/react-dom 19.3.0 published 2026-09-09 (71 days), @types/node 26.6.6 2026-10-28, @types/three 0.187.0 2026-10-30, @types/google.maps 3.66.10 2026-11-06. DefinitelyTyped last commit on master 2026-11-17. Each @types/* stub is now checked individually from the registry. Watch @types/leaflet: last release 1.9.22 on 2026-08-01, passing only on the registry `modified` timestamp 2026-10-04, which ages out 2027-01-04. Converted by an agent under the freshness rule; no owner approval recorded; owner review pending."
         },
         "@tanstack": {
           "reason": "TanStack. One organisation, one release process; react-query, react-table and react-virtual are all load-bearing in fancy-query and fancy-grid."
@@ -281,7 +281,7 @@
         "leaflet": {
           "reason": "The OSM map engine this package exists to wrap.",
           "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision recorded; owner review pending (audit 2026-11-19)",
-          "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because leaflet passes the 92-day bar on the registry: 2.0.0-beta.4 published 2026-11-12 (7 days); last commit on main 2026-11-18. Note the pass comes from the 2.0 beta line: the latest stable, 1.9.4 (the range fancy-map uses), dates from 2023-05-18. Converted by an agent under the freshness rule; the approval itself is unchanged."
+          "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed, because leaflet passes the 92-day bar on the registry: 2.0.0-beta.4 published 2026-11-12 (7 days); last commit on main 2026-11-18. Note the pass comes from the 2.0 beta line: the latest stable, 1.9.4 (the range fancy-map uses), dates from 2023-05-18. Converted by an agent under the freshness rule; no owner approval recorded; owner review pending."
         },
         "@googlemaps/js-api-loader": {
           "reason": "The Google Maps engine adapter's loader. Google's own package.",
@@ -518,7 +518,7 @@
         "leaflet": {
           "reason": "Peer of fancy-map, which the showcase demonstrates.",
           "approval": "founding list (agent-seeded 2026-08-19, 55049dc); no owner decision recorded; owner review pending (audit 2026-11-19)",
-          "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed: same finding as the fancy-map grant (2.0.0-beta.4 published 2026-11-12; stable 1.9.4 is from 2023-05-18; last commit on main 2026-11-18). Converted by an agent under the freshness rule; the approval itself is unchanged."
+          "freshnessConverted": "2026-11-19: the git-mode freshness override (verified 2026-08-19, expired 2026-11-19) is retired, not renewed: same finding as the fancy-map grant (2.0.0-beta.4 published 2026-11-12; stable 1.9.4 is from 2023-05-18; last commit on main 2026-11-18). Converted by an agent under the freshness rule; no owner approval recorded; owner review pending."
         },
         "@googlemaps/js-api-loader": {
           "reason": "Peer of fancy-map's Google engine adapter.",
