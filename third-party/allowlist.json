@@ -191,19 +191,6 @@
         "axios": {
           "reason": "The HTTP client Laravel and Inertia scaffolds ship with; peer of classroom and job-board."
         },
-        "@inertiajs/react": {
-          "reason": "Inertia.js. The integration seam fancy-inertia and fancy-query exist to serve.",
-          "decision": {
-            "scope": "package-only",
-            "owner": "wishborn",
-            "date": "2026-11-19",
-            "questions": ["q_63e61e43", "q_906c61e0", "q_7fd61e5d"],
-            "packages": ["@particle-academy/fancy-inertia", "@particle-academy/fancy-query", "pa-ux-sandbox", "fancy-starter-kit", "fancy-labs"],
-            "otherUse": "The standard pattern (owner, q_7fd61e5d): fancy-inertia and fancy-query declare it as a peer plus a devDependency, and the apps install it. No bridge package and no re-export. Each declarer holds its own packageGrants entry.",
-            "enforced": false,
-            "gap": "Kept kit-wide only because three org repos outside those grants also declare it directly: prism-labs, prism-sandbox (Prism's estate) and website (an app). Deleting this entry would fail all three. Pending owner review: grant them, or move them off it, then delete this entry so the gate refuses any other direct declaration."
-          }
-        },
         "laravel-echo": {
           "reason": "Laravel broadcasting client; the transport behind fancy-query's live invalidation."
         },
@@ -256,19 +243,6 @@
         },
         "guzzlehttp/guzzle": {
           "reason": "The HTTP client behind the fancy-git provider adapters and Laravel's HTTP facade."
-        },
-        "inertiajs/inertia-laravel": {
-          "reason": "The server half of Inertia.",
-          "decision": {
-            "scope": "package-only",
-            "owner": "wishborn",
-            "date": "2026-11-19",
-            "questions": ["q_63e61e43", "q_906c61e0", "q_7fd61e5d"],
-            "packages": ["pa-ux-sandbox", "fancy-starter-kit", "fancy-labs"],
-            "otherUse": "The standard pattern (owner, q_7fd61e5d), with no PHP bridge package: the three apps require it, each under its own packageGrants entry. change-council, fancy-captcha and fancy-compliance only suggest it and check for it at runtime; a suggestion is not a dependency, so they need no grant.",
-            "enforced": false,
-            "gap": "Kept kit-wide only because three org repos outside those grants also require it: prism-labs, prism-sandbox (Prism's estate) and website (an app). Deleting this entry would fail all three. Pending owner review: grant them, or move them off it, then delete this entry."
-          }
         },
         "spatie/browsershot": {
           "reason": "Headless-Chrome rendering for the showcase's PDF and image capture."
@@ -333,7 +307,8 @@
             "owner": "wishborn",
             "date": "2026-11-19",
             "questions": ["q_63e61e43", "q_906c61e0", "q_7fd61e5d"],
-            "packages": ["@particle-academy/fancy-inertia"]
+            "packages": ["@particle-academy/fancy-inertia"],
+            "otherUse": "The standard pattern (owner, q_7fd61e5d): fancy-inertia and fancy-query declare @inertiajs/react as a peer plus a devDependency, and the applications install it with inertiajs/inertia-laravel. No bridge package and no re-export. Each declarer holds its own packageGrants entry; nothing approves Inertia kit-wide. change-council, fancy-captcha and fancy-compliance only suggest inertiajs/inertia-laravel and check for it at runtime; a suggestion is not a dependency, so they need no grant."
           }
         }
       }
@@ -821,6 +796,16 @@
     "prism-labs": {
       "_reason": "The Lab is a Laravel APPLICATION, so this grant is keyed on the REMOTE name (Particle-Academy/prism-labs) rather than its composer name, per the README.",
       "composer": {
+        "inertiajs/inertia-laravel": {
+          "reason": "The server half of the Lab's Inertia stack.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_dc78bdad"],
+            "packages": ["prism-labs"]
+          }
+        },
         "open-telemetry/sdk": {
           "reason": "The Lab exercises prism-opentelemetry end to end, which needs a real SDK to emit spans."
         },
@@ -836,6 +821,16 @@
         }
       },
       "npm": {
+        "@inertiajs/react": {
+          "reason": "The Lab is an Inertia application.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_dc78bdad"],
+            "packages": ["prism-labs"]
+          }
+        },
         "playwright": {
           "reason": "Drives the Lab's browser tests (devDependencies)."
         },
@@ -854,6 +849,16 @@
     "prism-sandbox": {
       "_reason": "The sandbox is a Laravel APPLICATION, so this grant is keyed on the REMOTE name (Particle-Academy/prism-sandbox).",
       "composer": {
+        "inertiajs/inertia-laravel": {
+          "reason": "The server half of the sandbox's Inertia stack.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_dc78bdad"],
+            "packages": ["prism-sandbox"]
+          }
+        },
         "league/commonmark": {
           "reason": "Renders the sandbox's documentation pages from Markdown."
         },
@@ -862,6 +867,16 @@
         }
       },
       "npm": {
+        "@inertiajs/react": {
+          "reason": "The sandbox is an Inertia application.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_dc78bdad"],
+            "packages": ["prism-sandbox"]
+          }
+        },
         "laravel-vite-plugin": {
           "reason": "Vite integration used only by this Laravel application build/dev toolchain; scoped git-activity freshness review.",
           "freshness": {
@@ -870,6 +885,33 @@
             "verifiedOn": "2026-10-30",
             "expires": "2027-01-30",
             "why": "The npm package has no newer release, but its default branch is being tended: signed commit 38d2a7cbe0b5bd9c6ef77074ea5f22a013a8d114 updates the CodeQL workflow. Routine dependency maintenance counts as project activity under the existing policy. Re-verify before expiry; a release restoring registry freshness retires this override."
+          }
+        }
+      }
+    },
+    "website": {
+      "_reason": "A Laravel APPLICATION whose composer.json is named laravel/laravel and whose package.json has no name, so this grant is keyed on the REMOTE name (Particle-Academy/website), per the README.",
+      "npm": {
+        "@inertiajs/react": {
+          "reason": "The site is an Inertia application.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_dc78bdad"],
+            "packages": ["website"]
+          }
+        }
+      },
+      "composer": {
+        "inertiajs/inertia-laravel": {
+          "reason": "The server half of the site's Inertia stack.",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-19",
+            "questions": ["q_dc78bdad"],
+            "packages": ["website"]
           }
         }
       }
@@ -959,27 +1001,45 @@
         }
       }
     },
-    "laravel-apps-pending": {
-      "reason": "Our Laravel APPLICATIONS. They are not 'packages', so the owner's Laravel decision does not reach them; they keep the coverage they had (laravel/framework was kit-wide) until the owner rules on them.",
-      "approval": "pending owner review (apps). Not covered by q_26036ea0, which said 'packages only'. Carried over unchanged so no app goes red; the owner grants the apps separately or they lose it.",
+    "laravel-apps": {
+      "reason": "Our Laravel APPLICATIONS. They are not 'packages', so q_26036ea0 did not reach them; the owner approved Laravel for these four separately (q_7a15982f, package-only).",
       "members": [
         "pa-ux-sandbox",
         "particle-academy/fancy-starter-kit",
         "particle-academy/fancy-labs",
-        "laravel-jobs-reference",
         "website"
       ],
       "composer": {
         "packages": {
           "laravel/framework": {
-            "reason": "The framework each of these applications is built on."
+            "reason": "The framework each of these applications is built on.",
+            "decision": {
+              "scope": "package-only",
+              "owner": "wishborn",
+              "date": "2026-11-19",
+              "questions": ["q_7a15982f"],
+              "packages": ["group:laravel-apps"]
+            }
           }
         }
       }
     },
-    "laravel-prism-pending": {
-      "reason": "Prism's Laravel packages and apps. Prism's estate, so whether 'our Laravel packages' reaches them is for Prism and the owner; they keep the coverage they had (illuminate/* and laravel/framework were kit-wide) until that is decided.",
-      "approval": "pending owner review (Prism estate). Not covered by q_26036ea0. Carried over unchanged so no Prism repo goes red.",
+    "laravel-apps-pending": {
+      "reason": "laravel-jobs-reference, a Laravel application. The owner left it out of q_7a15982f: it should become a lab test in fancy-labs, not a separate app.",
+      "approval": "pending owner review (apps). Not covered by q_26036ea0 ('packages only') nor q_7a15982f, which approved the other four applications and deliberately not this one: the owner wants it moved into the lab. Carried over unchanged so it does not go red meanwhile. Once the lab lane replaces it and the repo is archived, delete this group.",
+      "members": [
+        "laravel-jobs-reference"
+      ],
+      "composer": {
+        "packages": {
+          "laravel/framework": {
+            "reason": "The framework this reference application is built on."
+          }
+        }
+      }
+    },
+    "laravel-prism": {
+      "reason": "Prism's Laravel packages and apps. The owner approved Laravel for these 11 repos (q_dc78bdad, package-only).",
       "members": [
         "particle-academy/prism",
         "particle-academy/prism-browser",
@@ -996,12 +1056,26 @@
       "composer": {
         "authors": {
           "illuminate": {
-            "reason": "Laravel's component splits; prism-opentelemetry requires illuminate/contracts and illuminate/support."
+            "reason": "Laravel's component splits; prism-opentelemetry requires illuminate/contracts and illuminate/support.",
+            "decision": {
+              "scope": "package-only",
+              "owner": "wishborn",
+              "date": "2026-11-19",
+              "questions": ["q_dc78bdad"],
+              "packages": ["group:laravel-prism"]
+            }
           }
         },
         "packages": {
           "laravel/framework": {
-            "reason": "The framework these Prism packages and apps are built on."
+            "reason": "The framework these Prism packages and apps are built on.",
+            "decision": {
+              "scope": "package-only",
+              "owner": "wishborn",
+              "date": "2026-11-19",
+              "questions": ["q_dc78bdad"],
+              "packages": ["group:laravel-prism"]
+            }
           }
         }
       }

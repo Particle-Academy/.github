@@ -197,19 +197,64 @@ test('the laravel-packages group carries the owner decision and names no applica
   assert.ok(g.members.length >= 29);
 });
 
-test('the applications keep Laravel only through a group that says it awaits the owner', () => {
-  const apps = real.grantGroups['laravel-apps-pending'];
-  assert.match(apps.approval, /pending owner review \(apps\)/);
-  for (const e of [apps.composer.authors?.illuminate, apps.composer.packages['laravel/framework']].filter(Boolean)) {
-    assert.equal(e.decision, undefined, 'no owner decision covers the apps yet');
-  }
+// Owner, 2026-11-19, q_7a15982f: Laravel package-only for the four applications
+// (the owner's alternative option). laravel-jobs-reference is left out on
+// purpose: it is to become a lab test, not a separate app.
+test('the four applications hold Laravel through laravel-apps, on the owner decision q_7a15982f', () => {
+  const apps = real.grantGroups['laravel-apps'];
+  assert.deepEqual([...apps.members].sort(),
+    ['pa-ux-sandbox', 'particle-academy/fancy-labs', 'particle-academy/fancy-starter-kit', 'website']);
+  const d = apps.composer.packages['laravel/framework'].decision;
+  assert.equal(d.scope, 'package-only');
+  assert.deepEqual(d.questions, ['q_7a15982f']);
+  assert.deepEqual(d.packages, ['group:laravel-apps']);
+  assert.equal(apps.approval, undefined, 'a decided group carries no pending note');
   // The identities checkRepo really passes: manifest name, then repo/remote name.
   for (const ids of [['laravel/laravel', 'pa-ux-sandbox'], ['particle-academy/fancy-starter-kit', 'fancy-starter-kit'],
-    ['particle-academy/fancy-labs', 'fancy-labs'], ['laravel/laravel', 'laravel-jobs-reference'], ['laravel/laravel', 'website']]) {
-    assert.equal(classify(real, 'composer', 'laravel/framework', ids).group, 'laravel-apps-pending', ids.join(' / '));
+    ['particle-academy/fancy-labs', 'fancy-labs'], ['laravel/laravel', 'website']]) {
+    const v = classify(real, 'composer', 'laravel/framework', ids);
+    assert.equal(v.group, 'laravel-apps', ids.join(' / '));
+    assert.ok(v.entry.decision.questions.includes('q_7a15982f'), ids.join(' / '));
   }
   // and the shared scaffold name alone grants nothing
   assert.equal(classify(real, 'composer', 'laravel/framework', ['laravel/laravel']).allowed, false);
+});
+
+test('laravel-jobs-reference alone stays pending: the owner wants it as a lab test, not an app', () => {
+  assert.ok(!real.grantGroups['laravel-apps'].members.includes('laravel-jobs-reference'));
+  const pending = real.grantGroups['laravel-apps-pending'];
+  assert.deepEqual(pending.members, ['laravel-jobs-reference']);
+  assert.match(pending.approval, /pending owner review/);
+  assert.match(pending.approval, /q_7a15982f/);
+  assert.equal(pending.composer.packages['laravel/framework'].decision, undefined, 'no owner decision covers it');
+  const v = classify(real, 'composer', 'laravel/framework', ['laravel/laravel', 'laravel-jobs-reference']);
+  assert.equal(v.group, 'laravel-apps-pending');
+  assert.equal(v.entry.decision, undefined);
+});
+
+// Owner, 2026-11-19, q_dc78bdad: Laravel package-only for Prism's 11 Laravel repos.
+test('Prism\'s estate holds Laravel through laravel-prism, on the owner decision q_dc78bdad', () => {
+  assert.equal(real.grantGroups['laravel-prism-pending'], undefined, 'nothing of Prism\'s is pending any more');
+  const g = real.grantGroups['laravel-prism'];
+  assert.equal(g.members.length, 11);
+  assert.equal(g.approval, undefined);
+  for (const entry of [g.composer.authors.illuminate, g.composer.packages['laravel/framework']]) {
+    assert.equal(entry.decision.scope, 'package-only');
+    assert.deepEqual(entry.decision.questions, ['q_dc78bdad']);
+    assert.deepEqual(entry.decision.packages, ['group:laravel-prism']);
+  }
+  for (const [dep, ids] of [['laravel/framework', ['particle-academy/prism-labs', 'prism-labs']],
+    ['laravel/framework', ['particle-academy/prism-sandbox', 'prism-sandbox']],
+    ['illuminate/support', ['particle-academy/prism-opentelemetry', 'prism-opentelemetry']]]) {
+    const v = classify(real, 'composer', dep, ids);
+    assert.equal(v.group, 'laravel-prism', ids.join(' / '));
+    assert.ok(v.entry.decision.questions.includes('q_dc78bdad'));
+  }
+});
+
+test('no grant group is still pending except the one the owner deferred', () => {
+  const pending = Object.entries(real.grantGroups).filter(([n, g]) => !n.startsWith('_') && g.approval).map(([n]) => n);
+  assert.deepEqual(pending, ['laravel-apps-pending']);
 });
 
 test('MUST FIRE (real allowlist): an unlisted package cannot declare Laravel', () => {
@@ -222,33 +267,52 @@ test('MUST FIRE (real allowlist): an unlisted package cannot declare Laravel', (
 // Inertia, owner decision q_7fd61e5d: standard pattern, no bridge
 // ---------------------------------------------------------------------------
 
-// The kit-wide entries could only go if nothing else declared Inertia. Three
-// org repos outside these grants do (prism-labs, prism-sandbox, website), so
-// they stay, unenforced, and say exactly who still rests on them.
-test('the kit-wide Inertia entries stay only as a declared gap naming who still needs them', () => {
-  for (const e of [real.ecosystems.npm.packages['@inertiajs/react'], real.ecosystems.composer.packages['inertiajs/inertia-laravel']]) {
-    assert.equal(e.decision.enforced, false);
-    for (const repo of ['prism-labs', 'prism-sandbox', 'website']) assert.match(e.decision.gap, new RegExp(repo));
-  }
+// The kit-wide entries could only go once nothing outside the grants declared
+// Inertia. The last three (prism-labs, prism-sandbox, website) were granted on
+// q_dc78bdad, so the entries are gone and the scope is enforced.
+test('Inertia is no longer kit-wide', () => {
+  assert.equal(real.ecosystems.npm.packages['@inertiajs/react'], undefined);
+  assert.equal(real.ecosystems.composer.packages['inertiajs/inertia-laravel'], undefined);
 });
 
-test('@inertiajs/react is granted to fancy-inertia, fancy-query and the three apps; nobody else holds a grant', () => {
-  for (const id of ['@particle-academy/fancy-inertia', '@particle-academy/fancy-query', 'pa-ux-sandbox', 'fancy-starter-kit', 'fancy-labs']) {
+const INERTIA_Q7 = ['@particle-academy/fancy-inertia', '@particle-academy/fancy-query', 'pa-ux-sandbox', 'fancy-starter-kit', 'fancy-labs'];
+const INERTIA_PRISM = ['prism-labs', 'prism-sandbox', 'website'];
+
+test('@inertiajs/react is granted to fancy-inertia, fancy-query, the three apps, and prism-labs, prism-sandbox and website', () => {
+  for (const id of INERTIA_Q7) {
     const v = classify(real, 'npm', '@inertiajs/react', [id]);
-    assert.equal(v.allowed, true, id);
+    assert.equal(v.via, 'grant', id);
     assert.ok(v.entry.decision.questions.includes('q_7fd61e5d'), id);
   }
-  // Anyone else still resolves only through the declared kit-wide gap above, never a grant.
-  assert.equal(classify(real, 'npm', '@inertiajs/react', ['@particle-academy/react-fancy']).via, 'package');
+  for (const id of INERTIA_PRISM) {
+    const v = classify(real, 'npm', '@inertiajs/react', [id]);
+    assert.equal(v.via, 'grant', id);
+    assert.deepEqual(v.entry.decision.questions, ['q_dc78bdad'], id);
+    assert.deepEqual(v.entry.decision.packages, [id], id);
+  }
 });
 
-test('inertiajs/inertia-laravel is granted to the three apps; nobody else holds a grant', () => {
+test('inertiajs/inertia-laravel is granted to the three apps and prism-labs, prism-sandbox and website', () => {
   for (const id of ['pa-ux-sandbox', 'fancy-starter-kit', 'fancy-labs']) {
     const v = classify(real, 'composer', 'inertiajs/inertia-laravel', [id]);
-    assert.equal(v.allowed, true, id);
+    assert.equal(v.via, 'grant', id);
     assert.ok(v.entry.decision.questions.includes('q_7fd61e5d'), id);
   }
-  assert.equal(classify(real, 'composer', 'inertiajs/inertia-laravel', ['particle-academy/change-council']).via, 'package');
+  for (const id of INERTIA_PRISM) {
+    // the composer identities checkRepo passes for these: manifest name, then remote name
+    const ids = [id === 'website' ? 'laravel/laravel' : `particle-academy/${id}`, id];
+    const v = classify(real, 'composer', 'inertiajs/inertia-laravel', ids);
+    assert.equal(v.via, 'grant', id);
+    assert.deepEqual(v.entry.decision.questions, ['q_dc78bdad'], id);
+  }
+});
+
+test('MUST FIRE (real allowlist): a package outside the grants cannot declare Inertia', () => {
+  assert.equal(classify(real, 'npm', '@inertiajs/react', ['@particle-academy/react-fancy']).allowed, false);
+  assert.equal(classify(real, 'npm', '@inertiajs/react', ['@particle-academy/brand-new-thing', 'brand-new-thing']).allowed, false);
+  assert.equal(classify(real, 'composer', 'inertiajs/inertia-laravel', ['particle-academy/change-council', 'change-council']).allowed, false);
+  // the shared scaffold name grants nothing: website's grant is keyed on its remote name
+  assert.equal(classify(real, 'composer', 'inertiajs/inertia-laravel', ['laravel/laravel']).allowed, false);
 });
 
 // ---------------------------------------------------------------------------
