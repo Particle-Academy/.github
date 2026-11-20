@@ -197,6 +197,42 @@ test('the laravel-packages group carries the owner decision and names no applica
   assert.ok(g.members.length >= 29);
 });
 
+// Owner, 2026-11-19, q_7d592ac6 / q_906c61e0: "all of our laravel packages
+// should get the laravel dep". The 30 Weaver connectors are first-party Laravel
+// packages (laravel/framework in require-dev for their Laravel integration
+// tests), so they join laravel-packages as members; no new approval.
+const CONNECTORS = [
+  'amazon-ses', 'buffer', 'discord', 'facebook-lead-ads', 'facebook-pages', 'gmail', 'gmail-inbox',
+  'google-ads', 'google-analytics', 'google-calendar', 'google-docs', 'google-drive', 'google-meet',
+  'google-sheets', 'google-slides', 'hubspot', 'instagram-business', 'linkedin-ads', 'microsoft-outlook',
+  'microsoft-teams', 'monday', 'notion', 'resend', 'slack', 'square', 'stripe', 'telegram', 'twilio',
+  'youtube', 'zoom',
+];
+
+test('the 30 Weaver connectors are literal members of laravel-packages', () => {
+  assert.equal(CONNECTORS.length, 30);
+  const g = real.grantGroups['laravel-packages'];
+  for (const c of CONNECTORS) assert.ok(g.members.includes(`particle-academy/${c}-php`), c);
+  assert.equal(g.members.length, 29 + 30);
+  assert.match(g.note, /q_7d592ac6/);
+  assert.match(g.note, /q_906c61e0/);
+  assert.equal(g.approval, undefined, 'membership, not a pending approval');
+  for (const c of CONNECTORS) {
+    // the identities checkRepo passes: composer name, then repo directory / remote name
+    for (const dep of ['laravel/framework', 'illuminate/support']) {
+      const v = classify(real, 'composer', dep, [`particle-academy/${c}-php`, c]);
+      assert.equal(v.group, 'laravel-packages', `${c} ${dep}`);
+      assert.equal(v.grantedTo, `particle-academy/${c}-php`, `${c} ${dep}`);
+    }
+  }
+});
+
+test('MUST FIRE (real allowlist): a connector repo name alone, or a near-miss name, grants nothing', () => {
+  assert.equal(classify(real, 'composer', 'laravel/framework', ['gmail']).allowed, false);
+  assert.equal(classify(real, 'composer', 'laravel/framework', ['particle-academy/gmail']).allowed, false);
+  assert.equal(classify(real, 'composer', 'laravel/framework', ['particle-academy/gmail-php-fork', 'gmail-php-fork']).allowed, false);
+});
+
 // Owner, 2026-11-19, q_7a15982f: Laravel package-only for the four applications
 // (the owner's alternative option). laravel-jobs-reference is left out on
 // purpose: it is to become a lab test, not a separate app.
