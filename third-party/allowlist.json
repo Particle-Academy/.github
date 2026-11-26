@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-11-19",
+  "updated": "2026-11-26",
   "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
   "policy": {
     "scope": "direct-only",
@@ -392,6 +392,21 @@
       "npm": {
         "@babylonjs/core": {
           "reason": "The engine this adapter exists to wrap. Peer, so the consumer owns the version."
+        }
+      }
+    },
+    "@particle-academy/fancy-graph": {
+      "npm": {
+        "three": {
+          "reason": "The engine behind the ./three entry (the 3D graph view, built on fancy-3d-three's Stage). An OPTIONAL peer, so apps that use only the 2D view never install it, and a devDependency for the package's own tests. The 2D core and the other entries never import it (tests/entry-isolation.test.ts walks their import graphs).",
+          "decision": {
+            "scope": "package-only",
+            "owner": "wishborn",
+            "date": "2026-11-26",
+            "questions": ["q_2b73af5d"],
+            "packages": ["@particle-academy/fancy-graph"],
+            "note": "ForceTheQuestion q_2b73af5d-b3cc-407d-afd8-5b648db4d425, answered 2026-11-26T06:10Z (msg_7540d9ed-ebb0-4378-9dfa-264465becc50): \"approve three here\". Optional peer plus devDependency, the same shape as fancy-3d-three's grant. Change CC-fancy-0062."
+          }
         }
       }
     },
