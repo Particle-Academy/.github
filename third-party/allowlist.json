@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-11-19",
+  "updated": "2026-11-28",
   "docs": "https://github.com/Particle-Academy/.github/blob/main/third-party/README.md",
   "policy": {
     "scope": "direct-only",
@@ -173,7 +173,15 @@
           "reason": "Resolves conflicting Tailwind classes; runtime dependency of react-fancy's class merging."
         },
         "lucide-react": {
-          "reason": "The icon set behind react-fancy's <Icon>."
+          "reason": "The icon set behind react-fancy's <Icon>, the CMS icon vocabulary (fancy-cms, fancy-cms-ui) and fancy-3d's <Canvas.Controls> toolbar.",
+          "approval": "Owner (wishborn), 2026-10-24: approved the whole Lucide set for the CMS, matching react-fancy (\"the cms should be using the icons fancy ships with which is Lucide\"); no question id was recorded for that decision. Owner, 2026-11-28, ForceTheQuestion q_404cefc3: @particle-academy/fancy-3d declares lucide-react as a runtime dependency under that same approval, at react-fancy's range. The founding entry (55049dc) predates both. Owner, 2026-11-28, ForceTheQuestion q_d51b271b: scope set to kit-wide.",
+          "decision": {
+            "scope": "kit-wide",
+            "owner": "wishborn",
+            "date": "2026-11-28",
+            "questions": ["q_404cefc3", "q_d51b271b"],
+            "covers": ["lucide-react"]
+          }
         },
         "marked": {
           "reason": "Markdown parsing in react-fancy and fancy-tui."
